@@ -26,7 +26,7 @@ graph LR
 ```
 
 ## Structure
-
+```mermaid
 graph TD
 
     A[MySupplyChain.Domain]
@@ -39,6 +39,7 @@ graph TD
 
     A --> C[Enums]
     C --> C1[Status.cs - Request statuses: Pending, Approved, Rejected]
+```
 
 ## Entities
 
