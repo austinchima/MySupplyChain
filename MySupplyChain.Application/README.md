@@ -8,28 +8,19 @@ The Application layer contains all **business logic** and orchestration. It uses
 
 ## Architecture Pattern: CQRS
 
-```
-┌──────────────┐           ┌──────────────┐
-│   Commands   │           │   Queries    │
-│  (Write)     │           │   (Read)     │
-└──────┬───────┘           └──────┬───────┘
-       │                          │
-       ▼                          ▼
-┌──────────────────────────────────────┐
-│         MediatR Pipeline             │
-└──────────────────────────────────────┘
-       │                          │
-       ▼                          ▼
-┌──────────────┐           ┌──────────────┐
-│  Domain      │           │   DTOs       │
-│  Changes     │           │  (Read-Only) │
-└──────────────┘           └──────────────┘
+```mermaid
+graph TD
+    A["Commands<br/>(Write)"] --> C["MediatR Pipeline"]
+    B["Queries<br/>(Read)"] --> C["MediatR Pipeline"]
+    C --> D["Domain<br/>Changes"]
+    C --> E["DTOs<br/>(Read-Only)"]
+
 ```
 
 ## Structure
 
 ```mermaid
-graph TD
+graph LR
     A[MySupplyChain.Application]
 
     A --> B[Common]
