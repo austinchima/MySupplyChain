@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="MySupplyChain.Domain/MySupplyChain.Domain.csproj" Id="52a79423-aafe-4507-8791-ba9e3cebe7c8" />
+  <Project Path="MySupplyChain.Application/MySupplyChain.Application.csproj" Id="87293048-A8F2-4C3D-9E5B-1234567890AB" />
+  <Project Path="MySupplyChain.Infrastructure/MySupplyChain.Infrastructure.csproj" Id="B1C2D3E4-F5A6-7B8C-9D0E-F1A2B3C4D5E6" />
+  <Project Path="MySupplyChain.API/MySupplyChain.API.csproj" Id="1A2B3C4D-5E6F-7A8B-9C0D-1E2F3A4B5C6D" />
+  <Project Path="MySupplyChain.ModelTrainer/MySupplyChain.ModelTrainer.csproj" Id="98765432-10AB-CDEF-0123-456789ABCDEF" />
+</Solution>
