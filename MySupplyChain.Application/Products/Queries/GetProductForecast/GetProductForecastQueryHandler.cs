@@ -7,27 +7,19 @@ namespace MySupplyChain.Application.Products.Queries.GetProductForecast;
 /// <summary>
 /// Handles demand forecasting using ML.NET
 /// </summary>
-public class GetProductForecastQueryHandler : IRequestHandler<GetProductForecastQuery, ProductForecastDto>
+public class GetProductForecastQueryHandler(IApplicationDbContext context, IDemandForecaster forecaster)
+    : IRequestHandler<GetProductForecastQuery, ProductForecastDto>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly IDemandForecaster _forecaster;
-
-    public GetProductForecastQueryHandler(IApplicationDbContext context, IDemandForecaster forecaster)
-    {
-        _context = context;
-        _forecaster = forecaster;
-    }
-
     public async Task<ProductForecastDto> Handle(GetProductForecastQuery request, CancellationToken cancellationToken)
     {
-        var product = await _context.Products
+        var product = await context.Products
             .FirstOrDefaultAsync(p => p.Id == request.ProductId, cancellationToken);
 
         if (product == null)
             throw new InvalidOperationException($"Product with ID {request.ProductId} not found");
 
         // Get historical sales data
-        var salesHistory = await _context.SalesHistories
+        var salesHistory = await context.SalesHistories
             .Where(s => s.ProductId == request.ProductId)
             .OrderByDescending(s => s.Date)
             .Take(90) // Last 90 days
@@ -36,7 +28,7 @@ public class GetProductForecastQueryHandler : IRequestHandler<GetProductForecast
 
         // Use AI to predict demand
         var predictedDemand = salesHistory.Any() 
-            ? await _forecaster.PredictDemandAsync(request.ProductId, salesHistory)
+            ? await forecaster.PredictDemandAsync(request.ProductId, salesHistory)
             : 0f;
 
         // ⭐ IMPROVED LOGIC: Use predicted demand + safety buffer

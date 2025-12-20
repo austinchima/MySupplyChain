@@ -12,4 +12,9 @@ public interface IDemandForecaster
     /// <param name="historicalSales">Recent sales data points</param>
     /// <returns>Predicted demand quantity</returns>
     Task<float> PredictDemandAsync(int productId, IEnumerable<float> historicalSales);
+
+    /// <summary>
+    /// Indicates whether a ML model is currently loaded and available for predictions
+    /// </summary>
+    bool IsModelLoaded { get; }
 }

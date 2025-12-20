@@ -4,20 +4,14 @@ using MySupplyChain.Application.Common.Interfaces;
 
 namespace MySupplyChain.Application.Products.Queries.GetAllProducts;
 
-public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, List<ProductDto>>
+public class GetAllProductsHandler(IApplicationDbContext context)
+    : IRequestHandler<GetAllProductsQuery, List<ProductDto>>
 {
-    private readonly IApplicationDbContext _context;
-
-    public GetAllProductsHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<List<ProductDto>> Handle(GetAllProductsQuery request, CancellationToken cancellationToken)
     {
-        var products = await _context.Products.ToListAsync(cancellationToken);
+        var products = await context.Products.ToListAsync(cancellationToken);
 
-        return products.Select(p => new ProductDto
+        return [.. products.Select(p => new ProductDto
         {
             Id = p.Id,
             Name = p.Name,
@@ -26,6 +20,6 @@ public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, List<P
             ReorderPoint = p.ReorderPoint,
             Price = p.Price,
             HealthStatus = p.CurrentStock <= p.ReorderPoint ? "Low Stock" : "Healthy"
-        }).ToList();
+        })];
     }
 }

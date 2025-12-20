@@ -12,22 +12,16 @@ namespace MySupplyChain.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class ProductsController : ControllerBase
+public class ProductsController(IMediator mediator, ILogger<ProductsController> logger) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public ProductsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     /// <summary>
     /// Create a new product
     /// </summary>
     [HttpPost]
     public async Task<ActionResult<int>> CreateProduct(CreateProductCommand command)
     {
-        var productId = await _mediator.Send(command);
+        logger.LogInformation("CreateProduct called for {Name}", command.Name);
+        var productId = await mediator.Send(command);
         return CreatedAtAction(nameof(GetProductForecast), new { id = productId }, productId);
     }
 
@@ -37,13 +31,14 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}/forecast")]
     public async Task<ActionResult<ProductForecastDto>> GetProductForecast(int id, [FromQuery] int daysToForecast = 30)
     {
+        logger.LogInformation("GetProductForecast called for ProductId={ProductId}, Days={Days}", id, daysToForecast);
         var query = new GetProductForecastQuery 
         { 
             ProductId = id, 
             DaysToForecast = daysToForecast 
         };
         
-        var result = await _mediator.Send(query);
+        var result = await mediator.Send(query);
         return Ok(result);
     }
     /// <summary>
@@ -54,10 +49,12 @@ public class ProductsController : ControllerBase
     {
         if (id != command.ProductId)
         {
+            logger.LogWarning("Restock called with mismatched ProductId. RouteId={RouteId}, BodyId={BodyId}", id, command.ProductId);
             return BadRequest("Product ID mismatch");
         }
 
-        var newStockLevel = await _mediator.Send(command);
+        logger.LogInformation("Restock called for ProductId={ProductId}, Quantity={Quantity}", id, command.Quantity);
+        var newStockLevel = await mediator.Send(command);
         return Ok(new { CurrentStock = newStockLevel, Message = "Product restocked successfully" });
     }
 
@@ -67,7 +64,8 @@ public class ProductsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<ProductDto>>> GetAllProducts()
     {
-        var result = await _mediator.Send(new GetAllProductsQuery());
+        logger.LogInformation("GetAllProducts called");
+        var result = await mediator.Send(new GetAllProductsQuery());
         return Ok(result);
     }
 }

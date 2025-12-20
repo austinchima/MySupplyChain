@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Architecture](https://img.shields.io/badge/Architecture-Clean-blueviolet)]()
 [![CQRS](https://img.shields.io/badge/Pattern-CQRS-orange)]()
+[![Tests](https://img.shields.io/badge/Tests-11%20Passing-success)]()
 
 > An AI-powered, educational supply chain management system built with .NET 9, Clean Architecture, and ML.NET.
 
@@ -18,6 +19,7 @@ MySupplyChain is a smart inventory management system designed to demonstrate mod
 - [Technologies](#technologies)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
+- [Testing](#testing)
 - [Data Flow](#data-flow)
 
 ## 💡 About The Project
@@ -148,6 +150,63 @@ You can interact with the system entirely through the Swagger UI:
 3.  **Check Reorder Requests:** Use `GET /api/reorder-requests` to see if the system automatically generated a request based on your order.
 4.  **Get a Forecast:** Use `GET /api/products/{id}/forecast` to see what the AI predicts for a specific item.
 
+## 🧪 Testing
+
+The project includes comprehensive test coverage across all layers:
+
+### Test Statistics
+
+- **Total Tests:** 11 passing
+- **Domain Tests:** 1
+- **Application Tests:** 5
+- **Infrastructure Tests:** 2
+- **Integration Tests:** 3
+
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test
+
+# Run tests with detailed output
+dotnet test --logger "console;verbosity=detailed"
+
+# Run tests in specific project
+cd MySupplyChain.Tests
+dotnet test
+```
+
+### Test Structure
+
+```mermaid
+graph TD
+    A[MySupplyChain.Tests]
+
+    A --> B[Domain]
+    B --> B1[ProductTests.cs<br/>Entity validation]
+
+    A --> C[Application]
+    C --> C1[Products/]
+    C1 --> C1a[RestockProductCommandHandlerTests.cs<br/>Command handler]
+    C1 --> C1b[CreateOrderCommandHandlerTests.cs<br/>Command handler]
+
+    A --> D[Infrastructure]
+    D --> D1[DemandForecasterTests.cs<br/>ML fallback logic]
+
+    A --> E[API]
+    E --> E1[ProductsControllerTests.cs<br/>E2E integration tests]
+```
+
+### What's Tested
+
+- ✅ **Stock Management:** Restocking products with valid/invalid quantities
+- ✅ **Order Processing:** Stock reduction and insufficient stock scenarios
+- ✅ **Automatic Reordering:** Reorder request generation when stock is low
+- ✅ **AI Forecasting:** ML model fallback behavior
+- ✅ **End-to-End Workflows:** Full API integration tests
+
+For detailed testing information, see [MySupplyChain.Tests/README.md](MySupplyChain.Tests/README.md).
+
 ## 🔄 Data Flow Example
 
 **Scenario: A customer places an order.**
@@ -160,6 +219,17 @@ You can interact with the system entirely through the Swagger UI:
 4.  **AI Trigger:** If low stock, handler calls `IDemandForecaster`.
 5.  **Infrastructure:** `DemandForecaster` uses the **ML.NET** model to predict need.
 6.  **Result:** A new `ReorderRequest` is saved to the database with a justification like _"Predicted demand of 25 units over the next 30 days."_
+
+## 📁 Project Structure
+
+Each project has its own detailed README with architecture specifics:
+
+- 📦 [MySupplyChain.Domain](MySupplyChain.Domain/README.md) - Core business entities
+- ⚙️ [MySupplyChain.Application](MySupplyChain.Application/README.md) - Business logic and CQRS handlers
+- 🔧 [MySupplyChain.Infrastructure](MySupplyChain.Infrastructure/README.md) - Database and ML.NET implementation
+- 🌐 [MySupplyChain.API](MySupplyChain.API/README.md) - RESTful API endpoints
+- 🤖 [MySupplyChain.ModelTrainer](MySupplyChain.ModelTrainer/README.md) - ML model training
+- 🧪 [MySupplyChain.Tests](MySupplyChain.Tests/README.md) - Comprehensive test suite
 
 ---
 

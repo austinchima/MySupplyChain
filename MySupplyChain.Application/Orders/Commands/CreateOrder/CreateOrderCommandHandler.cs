@@ -5,21 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MySupplyChain.Application.Orders.Commands.CreateOrder;
 
-public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, int>
+public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandForecaster forecaster)
+    : IRequestHandler<CreateOrderCommand, int>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly IDemandForecaster _forecaster;
-
-    public CreateOrderCommandHandler(IApplicationDbContext context, IDemandForecaster forecaster)
-    {
-        _context = context;
-        _forecaster = forecaster;
-    }
-
     public async Task<int> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
-        var product = await _context.Products
-            .FindAsync(new object[] { request.ProductId }, cancellationToken);
+        var product = await context.Products
+            .FindAsync([request.ProductId], cancellationToken);
 
         if (product == null)
             throw new Exception($"Product {request.ProductId} not found");
@@ -38,9 +30,9 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, int
             QuantitySold = request.Quantity
         };
         
-        _context.SalesHistories.Add(sale);
+        context.SalesHistories.Add(sale);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
         // Check for reorder asynchronously
         if (product.CurrentStock <= product.ReorderPoint)
@@ -54,7 +46,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, int
     private async Task CreateReorderRequestAsync(Product product, CancellationToken cancellationToken)
     {
         // Check if an active reorder already exists (Pending or Approved)
-        var activeReorderExists = await _context.ReorderRequests
+        var activeReorderExists = await context.ReorderRequests
             .AnyAsync(r => r.ProductId == product.Id && 
                           (r.Status == Domain.Enums.Status.Pending || r.Status == Domain.Enums.Status.Approved), 
                           cancellationToken);
@@ -62,14 +54,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, int
         if (activeReorderExists) return;
 
         // Get sales history for forecasting (last 30 records)
-        var history = await _context.SalesHistories
+        var history = await context.SalesHistories
             .Where(s => s.ProductId == product.Id)
             .OrderByDescending(s => s.Date)
             .Take(30)
             .Select(s => (float)s.QuantitySold)
             .ToListAsync(cancellationToken);
 
-        var prediction = await _forecaster.PredictDemandAsync(product.Id, history);
+        var prediction = await forecaster.PredictDemandAsync(product.Id, history);
         
         // Logic: Order enough to cover prediction + buffer, or fixed amount
         var predictedDemand = (decimal)prediction;
@@ -85,8 +77,8 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, int
             Justification = $"Stock ({product.CurrentStock}) fell below reorder point ({product.ReorderPoint}). AI Forecast predicts demand of {predictedDemand:F1}."
         };
 
-        _context.ReorderRequests.Add(request);
-        await _context.SaveChangesAsync(cancellationToken);
+        context.ReorderRequests.Add(request);
+        await context.SaveChangesAsync(cancellationToken);
     }
 }
 

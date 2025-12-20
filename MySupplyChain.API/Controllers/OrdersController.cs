@@ -6,26 +6,21 @@ namespace MySupplyChain.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrdersController : ControllerBase
+public class OrdersController(IMediator mediator, ILogger<OrdersController> logger) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public OrdersController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpPost]
     public async Task<ActionResult<int>> Create(CreateOrderCommand command)
     {
+        logger.LogInformation("CreateOrder called for ProductId={ProductId}, Quantity={Quantity}", command.ProductId, command.Quantity);
         try 
         {
-            var remainingStock = await _mediator.Send(command);
+            var remainingStock = await mediator.Send(command);
             return Ok(new { RemainingStock = remainingStock, Message = "Order placed successfully" });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { Error = ex.Message });
+            logger.LogError(ex, "Error placing order for ProductId={ProductId}", command.ProductId);
+            return BadRequest(new { Error = "An error occurred processing the order" });
         }
     }
 }

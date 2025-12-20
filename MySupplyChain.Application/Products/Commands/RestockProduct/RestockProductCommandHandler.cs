@@ -3,18 +3,11 @@ using MySupplyChain.Application.Common.Interfaces;
 
 namespace MySupplyChain.Application.Products.Commands.RestockProduct;
 
-public class RestockProductCommandHandler : IRequestHandler<RestockProductCommand, int>
+public class RestockProductCommandHandler(IApplicationDbContext context) : IRequestHandler<RestockProductCommand, int>
 {
-    private readonly IApplicationDbContext _context;
-
-    public RestockProductCommandHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<int> Handle(RestockProductCommand request, CancellationToken cancellationToken)
     {
-        var product = await _context.Products.FindAsync(new object[] { request.ProductId }, cancellationToken);
+        var product = await context.Products.FindAsync([request.ProductId], cancellationToken);
 
         if (product == null)
         {
@@ -23,7 +16,7 @@ public class RestockProductCommandHandler : IRequestHandler<RestockProductComman
 
         product.CurrentStock += request.Quantity;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
         return product.CurrentStock;
     }

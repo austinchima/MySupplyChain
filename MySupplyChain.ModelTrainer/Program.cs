@@ -8,7 +8,7 @@ namespace MySupplyChain.ModelTrainer;
 /// </summary>
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         Console.WriteLine("🤖 MySupplyChain - ML Model Trainer");
         Console.WriteLine("====================================\n");
@@ -18,7 +18,7 @@ class Program
         // 1. Load data
         Console.WriteLine("📊 Loading training data...");
         var dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sales_data.csv");
-        
+
         var dataView = mlContext.Data.LoadFromTextFile<ModelInput>(
             path: dataPath,
             hasHeader: true,
@@ -60,10 +60,11 @@ class Program
     static string GetSolutionRoot()
     {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-        while (directory != null && !directory.GetFiles("*.slnx").Any() && !directory.GetFiles("*.sln").Any())
+        while (directory != null && directory.GetFiles("*.slnx").Length == 0 && directory.GetFiles("*.sln").Length == 0)
         {
             directory = directory.Parent;
         }
+
         return directory?.FullName ?? throw new Exception("Could not find solution root");
     }
 }

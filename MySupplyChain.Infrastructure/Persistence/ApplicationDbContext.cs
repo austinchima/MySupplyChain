@@ -7,13 +7,9 @@ namespace MySupplyChain.Infrastructure.Persistence;
 /// <summary>
 /// EF Core implementation of the database context
 /// </summary>
-public class ApplicationDbContext : DbContext, IApplicationDbContext
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    : DbContext(options), IApplicationDbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
-        : base(options)
-    {
-    }
-
     public DbSet<Product> Products => Set<Product>();
     public DbSet<SalesHistory> SalesHistories => Set<SalesHistory>();
     public DbSet<ReorderRequest> ReorderRequests => Set<ReorderRequest>();
