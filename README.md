@@ -37,7 +37,7 @@ MySupplyChain uses historical sales data to forecast future demand, enabling pro
 The project follows **Clean Architecture** principles, ensuring that dependencies only point inwards.
 
 ```mermaid
-graph TD
+graph LR
     %% Core Layer: Domain
     subgraph Domain ["Domain Layer (The Core Data)"]
         style Domain fill:#f9f9f9,stroke:#333,stroke-width:2px
