@@ -1,5 +1,11 @@
 # MySupplyChain 🚛🤖
 
+[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![ML.NET](https://img.shields.io/badge/ML.NET-3.0-blue?logo=dotnet)](https://dotnet.microsoft.com/apps/machinelearning-ai/ml-dotnet)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Architecture](https://img.shields.io/badge/Architecture-Clean-blueviolet)]()
+[![CQRS](https://img.shields.io/badge/Pattern-CQRS-orange)]()
+
 > An AI-powered, educational supply chain management system built with .NET 9, Clean Architecture, and ML.NET.
 
 MySupplyChain is a smart inventory management system designed to demonstrate modern software architecture patterns. It tracks products, processes customer orders, and uses embedded **Artificial Intelligence** to predict future product demand, helping managers avoid stockouts and overstocking.
@@ -84,12 +90,14 @@ graph LR
 
 ## 🛠️ Technologies
 
-- **[.NET 9](https://dotnet.microsoft.com/)**: Core framework.
-- **[ASP.NET Core](https://asp.net/)**: Web API.
-- **[Entity Framework Core](https://docs.microsoft.com/ef/core/)**: ORM for SQL Server interaction.
-- **[ML.NET](https://dotnet.microsoft.com/en-us/apps/machinelearning-ai/ml-dotnet)**: Machine learning for demand forecasting.
-- **[MediatR](https://github.com/jbogard/MediatR)**: In-process messaging for CQRS.
-- **[Swagger/OpenAPI](https://swagger.io/)**: API documentation and testing UI.
+| Category             | Technology                                                                                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework**        | [![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)                                  |
+| **Web API**          | [![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-9.0-512BD4?logo=dotnet&logoColor=white)](https://asp.net/)                                 |
+| **ORM**              | [![EF Core](https://img.shields.io/badge/EF_Core-9.0-512BD4?logo=dotnet&logoColor=white)](https://docs.microsoft.com/ef/core/)                        |
+| **Machine Learning** | [![ML.NET](https://img.shields.io/badge/ML.NET-3.0-blue?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/apps/machinelearning-ai/ml-dotnet) |
+| **Messaging**        | [![MediatR](https://img.shields.io/badge/MediatR-12.0-9cf)](https://github.com/jbogard/MediatR)                                                       |
+| **API Docs**         | [![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?logo=swagger&logoColor=black)](https://swagger.io/)                                   |
 
 ## 🚀 Getting Started
 
