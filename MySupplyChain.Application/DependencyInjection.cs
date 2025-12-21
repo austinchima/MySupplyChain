@@ -1,11 +1,13 @@
 /*
- * Author: Student Architect
+ * Author: Austin Chima
  * Summary: Dependency Injection setup for the Application layer.
  *          Registers the MediatR services and other application-specific dependencies.
  * Parameters: IServiceCollection services
  */
 
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using MySupplyChain.Application.Common.Behaviors;
 using System.Reflection;
 
 namespace MySupplyChain.Application
@@ -17,10 +19,18 @@ namespace MySupplyChain.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            // Register MediatR
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+            var assembly = Assembly.GetExecutingAssembly();
 
-            // TODO: Register Domain Services here
+            // Register MediatR
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(assembly);
+                // Add validation pipeline behavior
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            });
+
+            // Register FluentValidation validators
+            services.AddValidatorsFromAssembly(assembly);
 
             return services;
         }

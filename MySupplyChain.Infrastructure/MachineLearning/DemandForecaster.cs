@@ -45,7 +45,7 @@ public class DemandForecaster : IDemandForecaster
         }
     }
 
-    public Task<float> PredictDemandAsync(int productId, IEnumerable<float> historicalSales)
+    public Task<float> PredictDemandAsync(int productId, string sku, IEnumerable<float> historicalSales)
     {
         // Materialize the enumerable once to avoid multiple enumeration
         var salesList = historicalSales.ToList();
@@ -72,6 +72,7 @@ public class DemandForecaster : IDemandForecaster
             var input = new ModelInput
             {
                 ProductId = productId,
+                Sku = sku,
                 QuantitySold = avgSales,
                 DayOfWeek = (int)DateTime.Now.DayOfWeek,
                 Month = DateTime.Now.Month,

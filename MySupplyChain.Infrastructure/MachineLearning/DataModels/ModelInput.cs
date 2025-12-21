@@ -12,17 +12,20 @@ public class ModelInput
     public float ProductId { get; set; }
 
     [LoadColumn(1)]
-    public string Date { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;
 
     [LoadColumn(2)]
-    public float QuantitySold { get; set; }
+    public string Date { get; set; } = string.Empty;
 
     [LoadColumn(3)]
-    public float Price { get; set; }
+    public float QuantitySold { get; set; }
 
     [LoadColumn(4)]
-    public float DayOfWeek { get; set; }
+    public float Price { get; set; }
 
     [LoadColumn(5)]
+    public float DayOfWeek { get; set; }
+
+    [LoadColumn(6)]
     public float Month { get; set; }
 }

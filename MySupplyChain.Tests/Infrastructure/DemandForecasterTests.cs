@@ -16,7 +16,7 @@ public class DemandForecasterTests
         var history = new List<float> { 10, 20, 30 }; // Avg = 20
 
         // Act
-        var result = await forecaster.PredictDemandAsync(1, history);
+        var result = await forecaster.PredictDemandAsync(1, "TEST-SKU-001", history);
 
         // Assert
         result.Should().Be(20);
@@ -30,7 +30,7 @@ public class DemandForecasterTests
         var history = Enumerable.Empty<float>();
 
         // Act
-        var result = await forecaster.PredictDemandAsync(1, history);
+        var result = await forecaster.PredictDemandAsync(1, "TEST-SKU-002", history);
 
         // Assert
         result.Should().Be(0);

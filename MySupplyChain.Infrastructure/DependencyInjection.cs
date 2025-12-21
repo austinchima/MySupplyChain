@@ -3,13 +3,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySupplyChain.Application.Common.Interfaces;
+using MySupplyChain.Infrastructure.Authentication;
 using MySupplyChain.Infrastructure.MachineLearning;
 using MySupplyChain.Infrastructure.Persistence;
 
 namespace MySupplyChain.Infrastructure;
 
 /// <summary>
-/// Registers Infrastructure layer services (EF Core, ML.NET)
+/// Registers Infrastructure layer services (EF Core, ML.NET, Authentication)
 /// </summary>
 public static class DependencyInjection
 {
@@ -33,6 +34,10 @@ public static class DependencyInjection
             var logger = provider.GetRequiredService<ILogger<DemandForecaster>>();
             return new DemandForecaster(modelPath, logger);
         });
+
+        // Register Authentication services
+        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

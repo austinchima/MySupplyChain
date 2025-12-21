@@ -8,19 +8,24 @@ namespace MySupplyChain.API.Controllers;
 [Route("api/[controller]")]
 public class OrdersController(IMediator mediator, ILogger<OrdersController> logger) : ControllerBase
 {
+    /// <summary>
+    /// Place a new order
+    /// </summary>
+    /// <remarks>
+    /// Reduces product stock and logs the order.
+    /// </remarks>
+    /// <param name="command">The order details including product ID and quantity.</param>
+    /// <returns>The remaining stock level and a success message.</returns>
+    /// <response code="200">Order placed successfully</response>
+    /// <response code="400">Invalid order details or insufficient stock</response>
     [HttpPost]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<int>> Create(CreateOrderCommand command)
     {
-        logger.LogInformation("CreateOrder called for ProductId={ProductId}, Quantity={Quantity}", command.ProductId, command.Quantity);
-        try 
-        {
-            var remainingStock = await mediator.Send(command);
-            return Ok(new { RemainingStock = remainingStock, Message = "Order placed successfully" });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error placing order for ProductId={ProductId}", command.ProductId);
-            return BadRequest(new { Error = "An error occurred processing the order" });
-        }
+        logger.LogInformation("CreateOrder called for ProductId={ProductId}, Quantity={Quantity}", command.ProductId,
+            command.Quantity);
+        var remainingStock = await mediator.Send(command);
+        return Ok(new { RemainingStock = remainingStock, Message = "Order placed successfully" });
     }
 }

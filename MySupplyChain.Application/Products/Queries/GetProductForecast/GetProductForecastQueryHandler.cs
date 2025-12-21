@@ -28,7 +28,7 @@ public class GetProductForecastQueryHandler(IApplicationDbContext context, IDema
 
         // Use AI to predict demand
         var predictedDemand = salesHistory.Any() 
-            ? await forecaster.PredictDemandAsync(request.ProductId, salesHistory)
+            ? await forecaster.PredictDemandAsync(request.ProductId, product.Sku, salesHistory)
             : 0f;
 
         // ⭐ IMPROVED LOGIC: Use predicted demand + safety buffer

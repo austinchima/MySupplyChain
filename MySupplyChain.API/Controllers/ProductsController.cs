@@ -17,7 +17,16 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <summary>
     /// Create a new product
     /// </summary>
+    /// <remarks>
+    /// Adds a new product to the catalog.
+    /// </remarks>
+    /// <param name="command">Product creation details.</param>
+    /// <returns>The ID of the newly created product.</returns>
+    /// <response code="201">Product created successfully</response>
+    /// <response code="400">Invalid product details</response>
     [HttpPost]
+    [ProducesResponseType(typeof(int), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<int>> CreateProduct(CreateProductCommand command)
     {
         logger.LogInformation("CreateProduct called for {Name}", command.Name);
@@ -28,28 +37,52 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <summary>
     /// Get AI-powered demand forecast for a product
     /// </summary>
+    /// <remarks>
+    /// Uses historical sales data and an ML.NET model to forecast future demand.
+    /// </remarks>
+    /// <param name="id">The product ID.</param>
+    /// <param name="daysToForecast">Number of days to forecast (default 30).</param>
+    /// <returns>Forecasted sales data.</returns>
+    /// <response code="200">Forecast generated successfully</response>
+    /// <response code="404">Product not found</response>
     [HttpGet("{id}/forecast")]
+    [ProducesResponseType(typeof(ProductForecastDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProductForecastDto>> GetProductForecast(int id, [FromQuery] int daysToForecast = 30)
     {
         logger.LogInformation("GetProductForecast called for ProductId={ProductId}, Days={Days}", id, daysToForecast);
-        var query = new GetProductForecastQuery 
-        { 
-            ProductId = id, 
-            DaysToForecast = daysToForecast 
+        var query = new GetProductForecastQuery
+        {
+            ProductId = id,
+            DaysToForecast = daysToForecast
         };
-        
+
         var result = await mediator.Send(query);
         return Ok(result);
     }
+
     /// <summary>
     /// Restock a product
     /// </summary>
+    /// <remarks>
+    /// Manually adds stock to a product.
+    /// </remarks>
+    /// <param name="id">The product ID.</param>
+    /// <param name="command">Restock details including quantity.</param>
+    /// <returns>The updated stock level.</returns>
+    /// <response code="200">Stock updated successfully</response>
+    /// <response code="400">Invalid request (e.g. ID mismatch)</response>
+    /// <response code="404">Product not found</response>
     [HttpPost("{id}/restock")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<int>> Restock(int id, [FromBody] RestockProductCommand command)
     {
         if (id != command.ProductId)
         {
-            logger.LogWarning("Restock called with mismatched ProductId. RouteId={RouteId}, BodyId={BodyId}", id, command.ProductId);
+            logger.LogWarning("Restock called with mismatched ProductId. RouteId={RouteId}, BodyId={BodyId}", id,
+                command.ProductId);
             return BadRequest("Product ID mismatch");
         }
 
@@ -61,7 +94,10 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
     /// <summary>
     /// Get all products with visibility into stock and health
     /// </summary>
+    /// <returns>A list of all products.</returns>
+    /// <response code="200">List of products retrieved successfully</response>
     [HttpGet]
+    [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<ProductDto>>> GetAllProducts()
     {
         logger.LogInformation("GetAllProducts called");

@@ -65,7 +65,7 @@ public class CreateOrderCommandHandlerTests
         await _context.SaveChangesAsync();
 
         // Forecaster setup
-        _forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<List<float>>()))
+        _forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<List<float>>()))
             .ReturnsAsync(50f);
 
         // Order 10 items -> Stock becomes 5 (<= 10) -> Trigger reorder

@@ -26,6 +26,7 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
         var sale = new SalesHistory
         {
             ProductId = request.ProductId,
+            Sku = product.Sku, // Include SKU for ML training
             Date = DateTime.UtcNow,
             QuantitySold = request.Quantity
         };
@@ -61,7 +62,7 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
             .Select(s => (float)s.QuantitySold)
             .ToListAsync(cancellationToken);
 
-        var prediction = await forecaster.PredictDemandAsync(product.Id, history);
+        var prediction = await forecaster.PredictDemandAsync(product.Id, product.Sku, history);
         
         // Logic: Order enough to cover prediction + buffer, or fixed amount
         var predictedDemand = (decimal)prediction;

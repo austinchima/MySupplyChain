@@ -34,7 +34,7 @@ public class ProductsControllerTests : IClassFixture<WebApplicationFactory<Progr
 
                 // Register Mock Forecaster
                 var forecasterMock = new Mock<IDemandForecaster>();
-                forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<IEnumerable<float>>()))
+                forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<IEnumerable<float>>()))
                     .ReturnsAsync(50f);
                 services.AddSingleton(forecasterMock.Object);
             });
