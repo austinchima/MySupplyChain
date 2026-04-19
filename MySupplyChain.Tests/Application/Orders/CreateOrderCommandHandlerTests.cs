@@ -1,9 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Application.Orders.Commands.CreateOrder;
 using MySupplyChain.Domain.Entities;
-using MySupplyChain.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 using MySupplyChain.Domain.Enums;
+using MySupplyChain.Infrastructure.Persistence;
 
 namespace MySupplyChain.Tests.Application.Orders;
 

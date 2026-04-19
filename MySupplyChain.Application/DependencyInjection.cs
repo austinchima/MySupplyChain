@@ -5,10 +5,10 @@
  * Parameters: IServiceCollection services
  */
 
+using System.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using MySupplyChain.Application.Common.Behaviors;
-using System.Reflection;
 
 namespace MySupplyChain.Application
 {

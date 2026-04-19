@@ -1,6 +1,6 @@
-using MySupplyChain.Application.Common.Exceptions;
 using System.Net;
 using System.Text.Json;
+using MySupplyChain.Application.Common.Exceptions;
 
 namespace MySupplyChain.API.Middleware;
 

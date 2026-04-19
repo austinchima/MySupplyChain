@@ -1,5 +1,5 @@
-using MySupplyChain.Infrastructure.MachineLearning;
 using Microsoft.Extensions.Logging;
+using MySupplyChain.Infrastructure.MachineLearning;
 
 namespace MySupplyChain.Tests.Infrastructure;
 

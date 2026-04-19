@@ -1,5 +1,5 @@
-using Microsoft.ML;
 using Microsoft.Extensions.Logging;
+using Microsoft.ML;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Infrastructure.MachineLearning.DataModels;
 

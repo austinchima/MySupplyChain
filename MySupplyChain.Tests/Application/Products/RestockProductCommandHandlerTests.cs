@@ -1,7 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Application.Products.Commands.RestockProduct;
 using MySupplyChain.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace MySupplyChain.Tests.Application.Products;
 

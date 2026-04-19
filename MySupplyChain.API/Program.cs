@@ -1,6 +1,6 @@
-using MySupplyChain.API.Middleware;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
+using MySupplyChain.API.Middleware;
 using MySupplyChain.Application;
 using MySupplyChain.Infrastructure;
 

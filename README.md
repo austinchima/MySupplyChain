@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Architecture](https://img.shields.io/badge/Architecture-Clean-blueviolet)]()
 [![CQRS](https://img.shields.io/badge/Pattern-CQRS-orange)]()
-[![Tests](https://img.shields.io/badge/Tests-11%20Passing-success)]()
+[![Tests](https://img.shields.io/badge/Tests-12%20Passing-success)]()
 
 > An AI-powered, educational supply chain management system built with .NET 9, Clean Architecture, and ML.NET.
 
@@ -156,9 +156,9 @@ The project includes comprehensive test coverage across all layers:
 
 ### Test Statistics
 
-- **Total Tests:** 11 passing
+- **Total Tests:** 12 passing
 - **Domain Tests:** 1
-- **Application Tests:** 5
+- **Application Tests:** 6
 - **Infrastructure Tests:** 2
 - **Integration Tests:** 3
 

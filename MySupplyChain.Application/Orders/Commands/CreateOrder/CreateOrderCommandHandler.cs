@@ -1,7 +1,7 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace MySupplyChain.Application.Orders.Commands.CreateOrder;
 

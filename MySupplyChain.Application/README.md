@@ -154,6 +154,7 @@ public interface IDemandForecaster
 {
     Task<float> PredictDemandAsync(
         int productId,
+        string sku,
         IEnumerable<float> historicalSales);
 }
 ```

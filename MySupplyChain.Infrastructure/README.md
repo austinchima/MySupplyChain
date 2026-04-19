@@ -13,12 +13,7 @@ graph TD
     A[MySupplyChain.Infrastructure]
 
     A --> B[Persistence]
-    B --> B1[ApplicationDbContext.cs<br/>EF Core DbContext]
-    B --> B2[ApplicationDbContextSeed.cs<br/>Initial data seeding]
-    B --> B3[Configurations/]
-    B3 --> B3a[ProductConfiguration.cs<br/>Product table config]
-    B3 --> B3b[SalesHistoryConfiguration.cs<br/>Sales table config]
-    B3 --> B3c[ReorderRequestConfiguration.cs<br/>ReorderRequest table config]
+    B --> B1[ApplicationDbContext.cs<br/>EF Core DbContext and inline data seeding]
 
     A --> C[MachineLearning]
     C --> C1[DemandForecaster.cs<br/>ML.NET implementation]
@@ -58,78 +53,39 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 }
 ```
 
-#### Fluent API Configurations
+#### Fluent API Configurations & Data Seeding
 
-Instead of Data Annotations, we use Fluent API in separate configuration files:
-
-**ProductConfiguration.cs:**
+Instead of Data Annotations or separate config classes, we use Fluent API efficiently mixed directly into `OnModelCreating`, along with `HasData` for deterministic seeding to ensure the ML model can train deterministically.
 
 ```csharp
-public class ProductConfiguration : IEntityTypeConfiguration<Product>
-{
-    public void Configure(EntityTypeBuilder<Product> builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        builder.HasKey(p => p.Id);
+        base.OnModelCreating(modelBuilder);
 
-        builder.Property(p => p.Name)
-            .IsRequired()
-            .HasMaxLength(200);
+        // Configure Product entity
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Price).HasPrecision(18, 2);
+        });
 
-        builder.Property(p => p.Sku)
-            .IsRequired()
-            .HasMaxLength(50);
+        // SEED DATA
+        var staticDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        builder.HasIndex(p => p.Sku)
-            .IsUnique();
-
-        builder.HasMany(p => p.SalesHistory)
-            .WithOne(s => s.Product)
-            .HasForeignKey(s => s.ProductId);
+        modelBuilder.Entity<Product>().HasData(
+            new Product { Id = 1, Name = "Laptop Dell XPS 13", Sku = "DELL-XPS-001", /* ... */ }
+        );
+        
+        // Identity Role data is also seeded safely
     }
-}
 ```
 
 **Why Fluent API?**
 
 - Keeps Domain entities clean (no database attributes)
-- Centralizes all database configuration
-- More powerful than Data Annotations
-
-#### Data Seeding
-
-`ApplicationDbContextSeed.cs` provides initial data:
-
-```csharp
-public static class ApplicationDbContextSeed
-{
-    public static void SeedData(ApplicationDbContext context)
-    {
-        if (!context.Products.Any())
-        {
-            context.Products.AddRange(
-                new Product
-                {
-                    Name = "Dell Laptop",
-                    Sku = "DELL-L-001",
-                    CurrentStock = 50,
-                    ReorderPoint = 10,
-                    Price = 1200.00m
-                },
-                // ... more products
-            );
-
-            context.SaveChanges();
-        }
-
-        // Seed historical sales for ML training
-        if (!context.SalesHistories.Any())
-        {
-            // Generate 30 days of sales data
-            // ...
-        }
-    }
-}
-```
+- Centralizes database structure in `OnModelCreating`
+- Hardcoded test data enables `HasData` logic to seed predictably on new environments
 
 ### 2. Machine Learning (ML.NET)
 
@@ -163,6 +119,7 @@ public class DemandForecaster : IDemandForecaster
 
     public Task<float> PredictDemandAsync(
         int productId,
+        string sku,
         IEnumerable<float> historicalSales)
     {
         var salesList = historicalSales.ToList();
@@ -184,9 +141,12 @@ public class DemandForecaster : IDemandForecaster
             var input = new ModelInput
             {
                 ProductId = productId,
+                Sku = sku,
                 QuantitySold = avgSales,
+                Price = 0,
                 DayOfWeek = (int)DateTime.Now.DayOfWeek,
-                Month = DateTime.Now.Month
+                Month = DateTime.Now.Month,
+                Date = DateTime.Now.ToString("yyyy-MM-dd")
             };
 
             var prediction = predictionEngine.Predict(input);
@@ -216,22 +176,25 @@ public class DemandForecaster : IDemandForecaster
 public class ModelInput
 {
     [LoadColumn(0)]
-    public string Date { get; set; }
+    public float ProductId { get; set; }
 
     [LoadColumn(1)]
-    public int ProductId { get; set; }
+    public string Sku { get; set; } = string.Empty;
 
     [LoadColumn(2)]
-    public float QuantitySold { get; set; }
+    public string Date { get; set; } = string.Empty;
 
     [LoadColumn(3)]
-    public int DayOfWeek { get; set; }
+    public float QuantitySold { get; set; }
 
     [LoadColumn(4)]
-    public int Month { get; set; }
+    public float Price { get; set; }
 
     [LoadColumn(5)]
-    public float Price { get; set; }
+    public float DayOfWeek { get; set; }
+
+    [LoadColumn(6)]
+    public float Month { get; set; }
 }
 ```
 

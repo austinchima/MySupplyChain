@@ -1,14 +1,14 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Application.Products.Commands.CreateProduct;
 using MySupplyChain.Application.Products.Commands.RestockProduct;
 using MySupplyChain.Application.Products.Queries.GetAllProducts;
 using MySupplyChain.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
 
 namespace MySupplyChain.Tests.API;
 

@@ -33,15 +33,32 @@ graph TD
 
     A --> B[Entities]
     B --> B1[EntityBase.cs - Base class with Id property]
-    B --> B2[Product.cs - Products in inventory]
-    B --> B3[SalesHistory.cs - Historical sales records]
-    B --> B4[ReorderRequest.cs - AI-generated reorder requests]
+    B --> B2[User.cs - Identity user for authentication]
+    B --> B3[Product.cs - Products in inventory]
+    B --> B4[SalesHistory.cs - Historical sales records]
+    B --> B5[ReorderRequest.cs - AI-generated reorder requests]
 
     A --> C[Enums]
     C --> C1[Status.cs - Request statuses: Pending, Approved, Rejected]
 ```
 
 ## Entities
+
+### User
+
+Represents the application's users, inheriting from ASP.NET Core Identity.
+
+```csharp
+public class User : IdentityUser
+{
+    public Role Role { get; set; }             // Admin/User privileges
+    public DateTime CreatedAt { get; set; }    // Account creation date
+}
+```
+
+**Purpose:**
+- Integrates gracefully into EF Core Identity for JWT authentication
+- Distinguishes standard users from system administrators
 
 ### Product
 
@@ -137,14 +154,17 @@ Used to track the lifecycle of reorder requests.
 
 ## Dependencies
 
-**None!** This is intentional. The Domain layer should be completely independent.
+**Minimal.** This layer maintains Clean Architecture by limiting external references strictly to the essential abstractions needed to enforce domain constraints, such as standard Identity constructs.
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
-  <!-- No package references -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.*" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.*" />
+  </ItemGroup>
 </Project>
 ```
 

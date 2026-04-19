@@ -1,6 +1,6 @@
 # MySupplyChain.Tests 🧪
 
-> Comprehensive test suite covering all application layers with 11 passing tests.
+> Comprehensive test suite covering all application layers with 12 passing tests.
 
 ## Purpose
 
@@ -9,9 +9,9 @@ The test project ensures code quality and correctness across all layers using **
 ## Test Statistics
 
 ```
-✅ Total Tests: 11 passing
+✅ Total Tests: 12 passing
 ├── Domain Tests: 1
-├── Application Tests: 5
+├── Application Tests: 6
 ├── Infrastructure Tests: 2
 └── Integration Tests: 3
 ```
