@@ -1,0 +1,48 @@
+using MySupplyChain.Application.Auth.Queries.Login;
+using MySupplyChain.Application.Common.Interfaces;
+
+namespace MySupplyChain.Tests.Application.Auth;
+
+public class LoginQueryHandlerTests
+{
+    private readonly Mock<IAuthService> _authServiceMock;
+    private readonly LoginQueryHandler _handler;
+
+    public LoginQueryHandlerTests()
+    {
+        _authServiceMock = new Mock<IAuthService>();
+        _handler = new LoginQueryHandler(_authServiceMock.Object);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnToken_WhenCredentialsAreCorrect()
+    {
+        // Arrange
+        var query = new LoginQuery("user", "Password123!");
+        var expectedToken = "valid.jwt.token";
+        
+        _authServiceMock.Setup(x => x.LoginAsync(query.UsernameOrEmail, query.Password))
+            .ReturnsAsync(expectedToken);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(expectedToken);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrowUnauthorizedAccessException_WhenLoginFails()
+    {
+        // Arrange
+        var query = new LoginQuery("wrong", "bad");
+        _authServiceMock.Setup(x => x.LoginAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string?)null);
+
+        // Act
+        Func<Task> act = async () => await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+}

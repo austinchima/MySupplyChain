@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Application.Products.Commands.CreateProduct;
 using MySupplyChain.Application.Products.Commands.RestockProduct;
@@ -11,6 +12,7 @@ namespace MySupplyChain.API.Controllers;
 /// Thin API layer - delegates to MediatR handlers
 /// </summary>
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ProductsController(IMediator mediator, ILogger<ProductsController> logger) : ControllerBase
 {

@@ -9,28 +9,28 @@ public class DemandForecasterTests
     private readonly string _dummyModelPath = "non_existent_model.zip";
 
     [Fact]
-    public async Task PredictDemandAsync_ShouldReturnAverage_WhenModelNotLoaded()
+    public async Task PredictDemandAsync_ShouldFallbackToMovingAverage_WhenMLModelIsMissing()
     {
         // Arrange
         var forecaster = new DemandForecaster(_dummyModelPath, _loggerMock.Object);
-        var history = new List<float> { 10, 20, 30 }; // Avg = 20
+        var historicalSales = new List<float> { 10, 20, 30 }; // Average = 20
 
         // Act
-        var result = await forecaster.PredictDemandAsync(1, "TEST-SKU-001", history);
+        var result = await forecaster.PredictDemandAsync(1, "SKU-001", historicalSales);
 
         // Assert
         result.Should().Be(20);
     }
 
     [Fact]
-    public async Task PredictDemandAsync_ShouldReturnZero_WhenHistoryEmpty()
+    public async Task PredictDemandAsync_ShouldReturnZero_WhenNoHistoryIsProvided()
     {
         // Arrange
         var forecaster = new DemandForecaster(_dummyModelPath, _loggerMock.Object);
-        var history = Enumerable.Empty<float>();
+        var emptyHistory = Enumerable.Empty<float>();
 
         // Act
-        var result = await forecaster.PredictDemandAsync(1, "TEST-SKU-002", history);
+        var result = await forecaster.PredictDemandAsync(1, "SKU-002", emptyHistory);
 
         // Assert
         result.Should().Be(0);

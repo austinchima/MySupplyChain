@@ -60,6 +60,18 @@ public class GlobalExceptionHandlerMiddleware(
                 logger.LogWarning("Resource not found: {Message}", notFoundEx.Message);
                 break;
 
+            case UnauthorizedAccessException unauthorizedEx:
+                statusCode = (int)HttpStatusCode.Unauthorized;
+                problemDetails = new
+                {
+                    Type = "https://tools.ietf.org/html/rfc7235#section-3.1",
+                    Title = "Unauthorized",
+                    Status = statusCode,
+                    Detail = unauthorizedEx.Message
+                };
+                logger.LogWarning("Unauthorized access: {Message}", unauthorizedEx.Message);
+                break;
+
             default:
                 statusCode = (int)HttpStatusCode.InternalServerError;
                 var detail = "An unexpected error occurred. Please try again later.";

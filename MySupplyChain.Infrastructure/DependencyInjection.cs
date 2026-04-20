@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Infrastructure.Authentication;
 using MySupplyChain.Infrastructure.MachineLearning;
@@ -36,8 +38,31 @@ public static class DependencyInjection
         });
 
         // Register Authentication services
+        var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
         services.AddScoped<IAuthService, AuthService>();
+
+        if (jwtSettings != null)
+        {
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+                };
+            });
+        }
 
         return services;
     }

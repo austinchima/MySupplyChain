@@ -25,7 +25,10 @@ public class AuthService(
         var existingUser = await userManager.FindByNameAsync(username) ?? await userManager.FindByEmailAsync(email);
         if (existingUser != null)
         {
-            throw new InvalidOperationException("User with this username or email already exists.");
+            throw new Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
+            {
+                { "User", ["User with this username or email already exists."] }
+            });
         }
 
         var user = new User

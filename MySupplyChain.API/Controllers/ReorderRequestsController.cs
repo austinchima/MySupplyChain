@@ -1,20 +1,15 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Application.ReorderRequests.Queries.GetReorderRequests;
 
 namespace MySupplyChain.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
-public class ReorderRequestsController : ControllerBase
+public class ReorderRequestsController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public ReorderRequestsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     /// <summary>
     /// Get all reorder requests with AI justifications
     /// </summary>
@@ -27,7 +22,7 @@ public class ReorderRequestsController : ControllerBase
     [ProducesResponseType(typeof(List<ReorderRequestDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<ReorderRequestDto>>> GetReorderRequests()
     {
-        var result = await _mediator.Send(new GetReorderRequestsQuery());
+        var result = await mediator.Send(new GetReorderRequestsQuery());
         return Ok(result);
     }
 }

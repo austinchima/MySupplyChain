@@ -22,11 +22,12 @@ builder.Services.AddSwaggerGen(c =>
     // Add JWT authentication to Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token.",
+        Description = "JWT Authorization header using the Bearer scheme. Enter your token below.",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -40,7 +41,7 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            []
+            Array.Empty<string>()
         }
     });
 
@@ -58,11 +59,42 @@ builder.Services.AddIdentityCore<MySupplyChain.Domain.Entities.User>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-// Register Application & Infrastructure layers
+// Register Application layer
 builder.Services.AddApplication();
+
+// Register Infrastructure (SQL Server, etc.) except during Testing to allow InMemory swap
 if (!builder.Environment.IsEnvironment("Testing"))
 {
     builder.Services.AddInfrastructure(builder.Configuration);
+}
+else
+{
+    // In Testing, we still need these baseline registrations that AddInfrastructure usually handles
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<MySupplyChain.Infrastructure.Authentication.JwtSettings>();
+    builder.Services.Configure<MySupplyChain.Infrastructure.Authentication.JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+    builder.Services.AddScoped<MySupplyChain.Application.Common.Interfaces.IAuthService, MySupplyChain.Infrastructure.Authentication.AuthService>();
+
+    if (jwtSettings != null)
+    {
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings.Issuer,
+                ValidAudience = jwtSettings.Audience,
+                IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtSettings.Secret))
+            };
+        });
+    }
 }
 
 builder.Services.AddTransient<GlobalExceptionHandlerMiddleware>();

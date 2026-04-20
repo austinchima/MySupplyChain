@@ -1,90 +1,62 @@
+using System.Net;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Application.Products.Commands.CreateProduct;
 using MySupplyChain.Application.Products.Commands.RestockProduct;
 using MySupplyChain.Application.Products.Queries.GetAllProducts;
-using MySupplyChain.Infrastructure.Persistence;
 
 namespace MySupplyChain.Tests.API;
 
-public class ProductsControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class ProductsControllerTests(WebApplicationFactory<Program> factory) : BaseIntegrationTest(factory)
 {
-    private readonly WebApplicationFactory<Program> _factory;
-
-    public ProductsControllerTests(WebApplicationFactory<Program> factory)
+    [Fact]
+    public async Task AnyRequest_ShouldReturnUnauthorized_WhenNoTokenProvided()
     {
-        _factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
+        // Arrange
+        var client = Factory.CreateClient();
 
-            builder.ConfigureTestServices(services =>
-            {
-                // Register InMemory DbContext                // Add InMemory DbContext with constant name to share across requests
-                var dbName = "TestDb_" + Guid.NewGuid();
-                services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseInMemoryDatabase(dbName));
+        // Act
+        var response = await client.GetAsync("/api/products");
 
-                services.AddScoped<IApplicationDbContext>(provider =>
-                    provider.GetRequiredService<ApplicationDbContext>());
-
-                // Register Mock Forecaster
-                var forecasterMock = new Mock<IDemandForecaster>();
-                forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<IEnumerable<float>>()))
-                    .ReturnsAsync(50f);
-                services.AddSingleton(forecasterMock.Object);
-            });
-        });
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
-    public async Task CreateAndRestockProduct_ShouldUpdateStock()
+    public async Task FullProductLifecycle_ShouldSucceed_WhenAuthenticated()
     {
-        var client = _factory.CreateClient();
-
-        // 1. Create Product
+        // Arrange
+        var client = await GetAuthenticatedClientAsync();
+        
+        // 1. Create a Product (C in CRUD)
         var createCommand = new CreateProductCommand
         {
-            Name = "Test Product",
-            Sku = "SKU-123",
-            Price = 10.0m,
-            CurrentStock = 100,
-            ReorderPoint = 10
+            Name = "Refactored Product",
+            Sku = "REF-123",
+            Price = 99.99m,
+            CurrentStock = 10,
+            ReorderPoint = 5
         };
+        
         var createResponse = await client.PostAsJsonAsync("/api/products", createCommand);
-
-        if (!createResponse.IsSuccessStatusCode)
-        {
-            var error = await createResponse.Content.ReadAsStringAsync();
-            throw new Exception($"CreateProduct failed: {createResponse.StatusCode} - {error}");
-        }
-        // Extract ID from Location header or response body if applicable. 
-        // Controller returns CreatedAtAction with id.
-        // But response body is just int? Let's check controller. 
-        // It returns CreatedAtAction(..., productId).
-        // Standard deserialization might be tricky if it's just an int in body.
-
-        // Let's assume response body is the integer ID.
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var productId = await createResponse.Content.ReadFromJsonAsync<int>();
 
-        // 2. Initial Get
-        var getInitial = await client.GetAsync("/api/products");
-        var initialProducts = await getInitial.Content.ReadFromJsonAsync<List<ProductDto>>();
-        initialProducts.Should().Contain(p => p.Id == productId && p.Name == "Test Product");
+        // 2. Get All Products (R in CRUD)
+        var getResponse = await client.GetAsync("/api/products");
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var products = await getResponse.Content.ReadFromJsonAsync<List<ProductDto>>();
+        products.Should().Contain(p => p.Id == productId && p.Name == "Refactored Product");
 
-        // 3. Restock
-        var restockCommand = new RestockProductCommand(productId, 50);
+        // 3. Restock Product (U in CRUD)
+        var restockCommand = new RestockProductCommand(productId, 20);
         var restockResponse = await client.PostAsJsonAsync($"/api/products/{productId}/restock", restockCommand);
-        restockResponse.EnsureSuccessStatusCode();
+        restockResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // 4. Verify Stock
-        var getAfter = await client.GetAsync("/api/products");
-        var finalProducts = await getAfter.Content.ReadFromJsonAsync<List<ProductDto>>();
+        // 4. Verify Update
+        var verifyResponse = await client.GetAsync("/api/products");
+        var finalProducts = await verifyResponse.Content.ReadFromJsonAsync<List<ProductDto>>();
         var product = finalProducts!.First(p => p.Id == productId);
-        product.CurrentStock.Should().Be(150);
+        product.CurrentStock.Should().Be(30); // 10 + 20
     }
 }

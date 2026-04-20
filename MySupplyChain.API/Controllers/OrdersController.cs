@@ -1,10 +1,12 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Application.Orders.Commands.CreateOrder;
 
 namespace MySupplyChain.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class OrdersController(IMediator mediator, ILogger<OrdersController> logger) : ControllerBase
 {
