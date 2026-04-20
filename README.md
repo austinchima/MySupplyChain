@@ -230,7 +230,3 @@ Each project has its own detailed README with architecture specifics:
 - 🌐 [MySupplyChain.API](MySupplyChain.API/README.md) - RESTful API endpoints
 - 🤖 [MySupplyChain.ModelTrainer](MySupplyChain.ModelTrainer/README.md) - ML model training
 - 🧪 [MySupplyChain.Tests](MySupplyChain.Tests/README.md) - Comprehensive test suite
-
----
-
-_This project is for educational purposes._
