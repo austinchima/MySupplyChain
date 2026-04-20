@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The ModelTrainer is a **separate utility** that trains the ML.NET model using historical sales data. It must be run **before** the API starts to generate the `sales_model.zip` file that the Infrastructure layer loads.
+The ModelTrainer is a **separate utility** that trains the ML.NET model using simulated historical sales data. It must be run **before** the API starts to generate the `sales_model.zip` file that the Infrastructure layer loads.
 
 ## Structure
 
