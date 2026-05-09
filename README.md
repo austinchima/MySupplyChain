@@ -1,3 +1,39 @@
+Test sequence. Just want to test a code review bot i made:
+```csharp
+namespace PRPilot.Infrastructure;
+
+/// <summary>
+/// Processes incoming GitHub pull request webhooks and queues review requests.
+/// </summary>
+/// <param name="logger">The logger instance for diagnostic messages.</param>
+/// <param name="channel">The communication channel used to enqueue review requests for background processing.</param>
+
+public sealed class ReviewProcessor(ILogger<ReviewProcessor> logger, Channel<ReviewRequest> channel) : WebhookEventProcessor
+{
+// override the default method for processing pull request webhooks and process them 
+    protected override async Task ProcessPullRequestWebhookAsync(
+        WebhookHeaders headers, 
+        PullRequestEvent pullRequestEvent, 
+        PullRequestAction action)
+    {
+        // skip if the action is not opened, synchronized, or reopened
+        if (action != PullRequestAction.Opened && 
+            action != PullRequestAction.Synchronize && 
+            action != PullRequestAction.Reopened)
+        {
+            logger.LogInformation("PR not opened, synchronized, or reopened, skipping");
+            return;
+        }
+        
+        // create a new review request and enqueue it
+        var request = new ReviewRequest
+        {
+            RepositoryFullName = pullRequestEvent.Repository?.FullName,
+            PullRequestNumber = (int)pullRequestEvent.PullRequest.Number,
+            PullRequestUrl = pullRequestEvent.PullRequest.Url
+        };
+```
+
 # MySupplyChain 🚛🤖
 
 **This is just a readme test to see if the webhook api thing works**
