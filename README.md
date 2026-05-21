@@ -1,6 +1,4 @@
 # MySupplyChain 🚛🤖
-
-**This is just a readme test to see if the webhook api thing works**
 ---
 
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
