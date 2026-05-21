@@ -5,7 +5,7 @@ using MySupplyChain.Application.Common.Interfaces;
 namespace MySupplyChain.Application.Products.Queries.GetProductForecast;
 
 /// <summary>
-/// Handles demand forecasting using ML.NET
+/// Handles demand forecasting using ML.NET SSA time series analysis
 /// </summary>
 public class GetProductForecastQueryHandler(IApplicationDbContext context, IDemandForecaster forecaster)
     : IRequestHandler<GetProductForecastQuery, ProductForecastDto>
@@ -18,39 +18,54 @@ public class GetProductForecastQueryHandler(IApplicationDbContext context, IDema
         if (product == null)
             throw new InvalidOperationException($"Product with ID {request.ProductId} not found");
 
-        // Get historical sales data
+        // Get historical sales data ordered chronologically (oldest → newest)
         var salesHistory = await context.SalesHistories
             .Where(s => s.ProductId == request.ProductId)
-            .OrderByDescending(s => s.Date)
-            .Take(90) // Last 90 days
+            .OrderBy(s => s.Date)
             .Select(s => (float)s.QuantitySold)
             .ToListAsync(cancellationToken);
 
-        // Use AI to predict demand
-        var predictedDemand = salesHistory.Any() 
-            ? await forecaster.PredictDemandAsync(request.ProductId, product.Sku, salesHistory)
-            : 0f;
+        // Use SSA to generate multi-day forecast
+        var forecast = salesHistory.Count != 0
+            ? await forecaster.PredictDemandAsync(request.ProductId, product.Sku, salesHistory, request.DaysToForecast)
+            : new ForecastResult
+            {
+                ForecastedUnits = new float[request.DaysToForecast],
+                LowerBound = new float[request.DaysToForecast],
+                UpperBound = new float[request.DaysToForecast],
+                Rmse = 0f,
+                Mae = 0f
+            };
 
-        // ⭐ IMPROVED LOGIC: Use predicted demand + safety buffer
-        var safetyBuffer = product.ReorderPoint * 0.5f; // 50% safety margin
-        var minimumRequired = predictedDemand + safetyBuffer;
-        var shouldReorder = product.CurrentStock < minimumRequired;
+        var totalPredictedDemand = forecast.ForecastedUnits.Sum();
+        var safetyBuffer = product.ReorderPoint * 0.5f;
+        var shouldReorder = product.CurrentStock < totalPredictedDemand + safetyBuffer;
         
         var recommendation = shouldReorder
-            ? $"⚠️ REORDER RECOMMENDED: Current stock ({product.CurrentStock}) is below safe level. " +
-            $"Predicted demand: {predictedDemand:F1} units, Safety buffer: {safetyBuffer:F1} units. " +
-            $"Suggested reorder: {(int)(minimumRequired - product.CurrentStock + product.ReorderPoint)} units."
-            : $"✅ Stock levels are sufficient. Current: {product.CurrentStock} units, " +
-            $"Predicted demand: {predictedDemand:F1} units (next {request.DaysToForecast} days).";
+            ? $"⚠️ REORDER RECOMMENDED: Current stock ({product.CurrentStock}) is insufficient for " +
+              $"projected {request.DaysToForecast}-day demand of {totalPredictedDemand:F1} units " +
+              $"(95% CI: {forecast.LowerBound.Sum():F1}–{forecast.UpperBound.Sum():F1}). " +
+              $"Suggested reorder: {(int)(totalPredictedDemand + safetyBuffer - product.CurrentStock + product.ReorderPoint)} units. " +
+              $"Model accuracy: RMSE={forecast.Rmse:F2}, MAE={forecast.Mae:F2}."
+            : $"✅ Stock levels are sufficient. Current: {product.CurrentStock} units. " +
+              $"Projected {request.DaysToForecast}-day demand: {totalPredictedDemand:F1} units " +
+              $"(95% CI: {forecast.LowerBound.Sum():F1}–{forecast.UpperBound.Sum():F1}). " +
+              $"Model accuracy: RMSE={forecast.Rmse:F2}, MAE={forecast.Mae:F2}.";
 
         return new ProductForecastDto
         {
             ProductId = product.Id,
             ProductName = product.Name,
-            PredictedDemand = predictedDemand,
             CurrentStock = product.CurrentStock,
             ShouldReorder = shouldReorder,
-            Recommendation = recommendation
+            Recommendation = recommendation,
+            ForecastedUnits = forecast.ForecastedUnits,
+            LowerBound = forecast.LowerBound,
+            UpperBound = forecast.UpperBound,
+            TotalPredictedDemand = totalPredictedDemand,
+            Rmse = forecast.Rmse,
+            Mae = forecast.Mae,
+            Horizon = request.DaysToForecast
         };
     }
 }

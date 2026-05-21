@@ -6,16 +6,6 @@
 *.user
 *.userosscache
 *.sln.docstates
-*.pdf
-
-# GitHub
-.gitignore
-.github/
-
-# GitLab
-.gitlab/
-
-
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -38,8 +28,6 @@ bld/
 
 # Visual Studio 2015/2017/2019/2022 cache/options directory
 .vs/
-# Uncomment if you have tasks that create the project's static files in wwwroot
-#wwwroot/
 
 # Visual Studio Code
 .vscode/*
@@ -48,8 +36,6 @@ bld/
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
-.vscode/
-
 
 # Local History for Visual Studio Code
 .history/
@@ -73,29 +59,24 @@ $RECYCLE.BIN/
 
 # NuGet
 *.nupkg
-# The packages folder can generally be ignored because of Package Restore
 **/[Pp]ackages/*
-# except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
-# Uncomment if necessary however generally it will be regenerated when needed
-#!**/[Pp]ackages/repositories.config
-# NuGet v3's project.lock.json
 project.lock.json
 
 # Microsoft Azure Web App tool
 App_Data/
 jobs/
 
-# MSSQL
+# MSSQL data files
 *.mdf
 *.ldf
 *.ndf
 
-# ML.NET models
-*.zip
+# ML.NET models (large binary files)
+MySupplyChain.Infrastructure/MLModels/*.zip
 *.onnx
 
-# Unit Test Extension
+# Unit Test
 *.testsettings
 *.runsettings
 
@@ -108,7 +89,6 @@ __pycache__/
 *.py[cod]
 
 # Dotnet Core
-project.lock.json
 project.fragment.lock.json
 artifacts/
 
@@ -132,8 +112,7 @@ yarn-error.log
 # BenchmarkDotNet
 BenchmarkDotNet.Artifacts/
 
-# OpenCover
-*.xml
+# Code coverage
 *.profdata
 coverage.json
 *.opencover.xml
@@ -152,4 +131,10 @@ appsettings.*.local.json
 *.db
 *.sqlite
 *.sqlite3
-*.log
+
+# Training data (generated or downloaded)
+data/
+
+# Local environment secrets — never commit
+.env
+!.env.example
