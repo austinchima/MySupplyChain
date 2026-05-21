@@ -19,6 +19,7 @@ public abstract class BaseIntegrationTest : IClassFixture<WebApplicationFactory<
 
     protected BaseIntegrationTest(WebApplicationFactory<Program> factory)
     {
+        Program.IsIntegrationTestRun = true;
         DatabaseName = $"TestDb_{Guid.NewGuid()}";
         Factory = factory.WithWebHostBuilder(builder =>
         {
@@ -57,8 +58,16 @@ public abstract class BaseIntegrationTest : IClassFixture<WebApplicationFactory<
     {
         // Default: Mock DemandForecaster
         var forecasterMock = new Mock<IDemandForecaster>();
-        forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<IEnumerable<float>>()))
-            .ReturnsAsync(50f);
+        var mockForecast = new ForecastResult
+        {
+            ForecastedUnits = Enumerable.Repeat(50f, 30).ToArray(),
+            LowerBound = Enumerable.Repeat(40f, 30).ToArray(),
+            UpperBound = Enumerable.Repeat(60f, 30).ToArray(),
+            Rmse = 5.0f,
+            Mae = 4.0f
+        };
+        forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<IEnumerable<float>>(), It.IsAny<int>()))
+            .ReturnsAsync(mockForecast);
         services.AddSingleton(forecasterMock.Object);
     }
 

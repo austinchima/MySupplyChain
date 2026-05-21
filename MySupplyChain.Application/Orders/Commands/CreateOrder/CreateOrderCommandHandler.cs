@@ -26,7 +26,7 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
         var sale = new SalesHistory
         {
             ProductId = request.ProductId,
-            Sku = product.Sku, // Include SKU for ML training
+            Sku = product.Sku,
             Date = DateTime.UtcNow,
             QuantitySold = request.Quantity
         };
@@ -54,19 +54,23 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
 
         if (activeReorderExists) return;
 
-        // Get sales history for forecasting (last 30 records)
+        // Get sales history for forecasting (last 90 records for better SSA accuracy)
         var history = await context.SalesHistories
             .Where(s => s.ProductId == product.Id)
             .OrderByDescending(s => s.Date)
-            .Take(30)
+            .Take(90)
             .Select(s => (float)s.QuantitySold)
             .ToListAsync(cancellationToken);
 
-        var prediction = await forecaster.PredictDemandAsync(product.Id, product.Sku, history);
+        // Reverse to chronological order (oldest → newest) for SSA
+        history.Reverse();
+
+        var forecast = await forecaster.PredictDemandAsync(product.Id, product.Sku, history);
         
-        // Logic: Order enough to cover prediction + buffer, or fixed amount
-        var predictedDemand = (decimal)prediction;
-        var quantityToOrder = (int)Math.Max(50, prediction * 1.5); // Simple rule
+        // Use the first 7 days of forecast to determine reorder quantity
+        var weeklyDemand = forecast.ForecastedUnits.Take(7).Sum();
+        var predictedDemand = (decimal)forecast.ForecastedUnits[0];
+        var quantityToOrder = (int)Math.Max(50, weeklyDemand * 2); // Cover ~2 weeks
 
         var request = new ReorderRequest
         {
@@ -75,11 +79,12 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
             PredictedDemand = predictedDemand,
             RequestedAt = DateTime.UtcNow,
             Status = Domain.Enums.Status.Pending,
-            Justification = $"Stock ({product.CurrentStock}) fell below reorder point ({product.ReorderPoint}). AI Forecast predicts demand of {predictedDemand:F1}."
+            Justification = $"Stock ({product.CurrentStock}) fell below reorder point ({product.ReorderPoint}). " +
+                           $"SSA Forecast: next-day demand = {forecast.ForecastedUnits[0]:F1} units, " +
+                           $"7-day total = {weeklyDemand:F1} units (RMSE={forecast.Rmse:F2})."
         };
 
         context.ReorderRequests.Add(request);
         await context.SaveChangesAsync(cancellationToken);
     }
 }
-

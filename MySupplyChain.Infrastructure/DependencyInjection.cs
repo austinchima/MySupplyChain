@@ -20,11 +20,11 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Register EF Core with SQLServer provider
+        // Register EF Core with SQL Server provider
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection")
-                ?? "Data Source=mysupplychain.db"));
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.")));
 
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());

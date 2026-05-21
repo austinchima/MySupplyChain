@@ -1,0 +1,13 @@
+**/.vs
+**/.vscode
+**/.git
+**/.gitignore
+**/.github
+**/bin
+**/obj
+**/data
+**/*.md
+**/BenchmarkDotNet.Artifacts
+**/.gemini
+**/Dockerfile
+**/docker-compose*

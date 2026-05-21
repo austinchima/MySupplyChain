@@ -1,232 +1,161 @@
-# MySupplyChain 🚛🤖
+# MySupplyChain
 
-[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![ML.NET](https://img.shields.io/badge/ML.NET-3.0-blue?logo=dotnet)](https://dotnet.microsoft.com/apps/machinelearning-ai/ml-dotnet)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Architecture](https://img.shields.io/badge/Architecture-Clean-blueviolet)]()
-[![CQRS](https://img.shields.io/badge/Pattern-CQRS-orange)]()
-[![Tests](https://img.shields.io/badge/Tests-12%20Passing-success)]()
+[![CI](https://github.com/austinchima/MySupplyChain/actions/workflows/ci.yml/badge.svg)](https://github.com/austinchima/MySupplyChain/actions/workflows/ci.yml)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> An AI-powered, educational supply chain management system built with .NET 9, Clean Architecture, and ML.NET.
+A production-grade supply chain management API built with **ASP.NET Core 10**, **Clean Architecture**, **CQRS + MediatR**, and **ML.NET SSA time series forecasting**.
 
-MySupplyChain is a smart inventory management system designed to demonstrate modern software architecture patterns. It tracks products, processes customer orders, and uses embedded **Artificial Intelligence** to predict future product demand, helping managers avoid stockouts and overstocking.
+## Architecture
 
-## 📋 Table of Contents
-
-- [About The Project](#about-the-project)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Technologies](#technologies)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Testing](#testing)
-- [Data Flow](#data-flow)
-
-## 💡 About The Project
-
-This project solves the critical business problem of **balancing supply and demand**.
-
-- **Stockouts:** Losing sales because you ran out of a popular item.
-- **Overstocking:** Wasting cash on inventory that just sits on the shelf.
-
-MySupplyChain uses historical sales data to forecast future demand, enabling proactive inventory management. When stock levels dip below a defined reorder point, the system **automatically** generates a reorder request, complete with an AI-generated justification for the quantity needed.
-
-## ✨ Key Features
-
-- **📦 Product Management:** Track inventory levels, prices, and SKUs.
-- **🛒 Order Processing:** Handle customer orders and automatically update stock.
-- **🧠 AI Demand Forecasting:** Uses ML.NET to predict future sales based on historical data.
-- **🔄 Automated Reordering:** Automatically generates reorder requests when stock is low, backed by AI predictions.
-- **🏗️ Clean Architecture:** strictly separates Domain, Application, Infrastructure, and API layers.
-- **⚡ CQRS:** Separates Read (Queries) and Write (Commands) operations for better scalability and maintenance.
-
-## 🏗️ Architecture
-
-The project follows **Clean Architecture** principles, ensuring that dependencies only point inwards.
-
-```mermaid
-graph TD
-    %% Core Layer: Domain
-    subgraph Domain ["Domain Layer (The Core Data)"]
-        style Domain fill:#f9f9f9,stroke:#333,stroke-width:2px
-        product[Product Data]
-        sales[Sales Record]
-        reorder[Reorder Request]
-    end
-
-    %% Business Logic Layer: Application
-    subgraph Application ["Application Layer (The Logic)"]
-        style Application fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
-        subgraph Interfaces ["Interfaces"]
-            idb[IApplicationDbContext]
-            iml[IDemandForecaster]
-        end
-        subgraph Features ["Features"]
-            createOrder[CreateOrderHandler]
-            getForecast[GetProductForecastHandler]
-        end
-    end
-
-    %% External Concerns Layer: Infrastructure
-    subgraph Infrastructure ["Infrastructure Layer (The Tools)"]
-        style Infrastructure fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-        dbContext["SQL Database (EF Core)"]
-        mlService["ML Model (ML.NET)"]
-    end
-
-    %% Entry Point: API
-    subgraph API ["API Layer (The Front Door)"]
-        style API fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-        controllers["API Controllers"]
-    end
-
-    %% Data Flow
-    API -->|Triggers| Application
-    Application -->|Uses| Domain
-    Infrastructure -->|Builds| Interfaces
-    createOrder -->|Needs| idb
-    createOrder -->|Needs| iml
-    dbContext -.->|Implements| idb
-    mlService -.->|Implements| iml
+```
+MySupplyChain/
+├── MySupplyChain.Domain          # Entities, enums, value objects (zero dependencies)
+├── MySupplyChain.Application     # CQRS handlers, interfaces, DTOs (depends on Domain)
+├── MySupplyChain.Infrastructure  # EF Core, ML.NET, JWT auth (implements Application interfaces)
+├── MySupplyChain.API             # Controllers, middleware, Swagger (composition root)
+├── MySupplyChain.ModelTrainer    # Offline SSA model training console app
+└── MySupplyChain.Tests           # Unit + integration tests (23 passing)
 ```
 
-## 🛠️ Technologies
+### Key Design Decisions
 
-| Category             | Technology                                                                                                                                            |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Framework**        | [![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)                                  |
-| **Web API**          | [![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-9.0-512BD4?logo=dotnet&logoColor=white)](https://asp.net/)                                 |
-| **ORM**              | [![EF Core](https://img.shields.io/badge/EF_Core-9.0-512BD4?logo=dotnet&logoColor=white)](https://docs.microsoft.com/ef/core/)                        |
-| **Machine Learning** | [![ML.NET](https://img.shields.io/badge/ML.NET-3.0-blue?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/apps/machinelearning-ai/ml-dotnet) |
-| **Messaging**        | [![MediatR](https://img.shields.io/badge/MediatR-12.0-9cf)](https://github.com/jbogard/MediatR)                                                       |
-| **API Docs**         | [![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?logo=swagger&logoColor=black)](https://swagger.io/)                                   |
+| Decision | Rationale |
+|---|---|
+| **Clean Architecture** | Enforces dependency inversion — Domain has zero dependencies, Infrastructure implements Application interfaces |
+| **CQRS + MediatR** | Separates read/write paths, enables pipeline behaviors (validation, logging) |
+| **SSA Forecasting** | Singular Spectrum Analysis captures seasonality + trend without feature engineering |
+| **JWT Auth** | Stateless authentication suitable for containerized horizontal scaling |
 
-## 🚀 Getting Started
+## ML.NET Demand Forecasting
 
-Follow these steps to get the project running on your local machine.
+The forecasting engine uses **Singular Spectrum Analysis (SSA)** via `Microsoft.ML.TimeSeries` to decompose historical sales into trend, seasonality, and noise components.
+
+**API Response:**
+```json
+{
+  "productId": 1,
+  "forecastedUnits": [12.3, 14.1, 13.8, ...],
+  "lowerBound": [8.1, 9.5, 9.2, ...],
+  "upperBound": [16.5, 18.7, 18.4, ...],
+  "totalPredictedDemand": 402.5,
+  "rmse": 3.21,
+  "mae": 2.84,
+  "horizon": 30,
+  "shouldReorder": true,
+  "recommendation": "⚠️ REORDER RECOMMENDED: ..."
+}
+```
+
+**Features:**
+- Multi-day horizon forecasts (default: 30 days, configurable via query parameter)
+- 95% confidence intervals (lower/upper bounds)
+- Model accuracy metrics (RMSE, MAE)
+- Automatic fallback to moving average when model is unavailable
+- Per-product SSA models for maximum accuracy
+
+## Quick Start
 
 ### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for containerized setup)
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [SQL Server Express](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) or LocalDB (comes with Visual Studio).
-
-### Installation
-
-1.  **Clone the repository**
-
-    ```bash
-    git clone https://github.com/austinchima/MySupplyChain.git
-    cd MySupplyChain
-    ```
-
-2.  **Train the AI Model**
-    Before running the API, you need to generate the ML model using the seeded data.
-
-    ```bash
-    cd MySupplyChain.ModelTrainer
-    dotnet run
-    ```
-
-    _This will create the `sales_model.zip` file in the Infrastructure layer._
-
-3.  **Run the API**
-    Navigate to the API project and run it. This will also automatically create the database and seed it with initial data.
-
-    ```bash
-    cd ../MySupplyChain.API
-    dotnet run
-    ```
-
-4.  **Access the App**
-    Open your browser and navigate to the URL shown in the console (usually `https://localhost:7066/swagger` or similar) to see the Swagger UI.
-
-## 🎮 Usage
-
-You can interact with the system entirely through the Swagger UI:
-
-1.  **Check Products:** Use `GET /api/products` to see the initial stock.
-2.  **Place an Order:** Use `POST /api/orders` to buy a product.
-    - _Try buying enough to drop stock below the Reorder Point (e.g., buy 40 Dell Laptops)._
-3.  **Check Reorder Requests:** Use `GET /api/reorder-requests` to see if the system automatically generated a request based on your order.
-4.  **Get a Forecast:** Use `GET /api/products/{id}/forecast` to see what the AI predicts for a specific item.
-
-## 🧪 Testing
-
-The project includes comprehensive test coverage across all layers:
-
-### Test Statistics
-
-- **Total Tests:** 12 passing
-- **Domain Tests:** 1
-- **Application Tests:** 6
-- **Infrastructure Tests:** 2
-- **Integration Tests:** 3
-
-### Running Tests
+### Option 1: Docker Compose (recommended)
 
 ```bash
-# Run all tests
-dotnet test
-
-# Run tests with detailed output
-dotnet test --logger "console;verbosity=detailed"
-
-# Run tests in specific project
-cd MySupplyChain.Tests
-dotnet test
+docker compose up --build
 ```
 
-### Test Structure
+The API will be available at `http://localhost:5000/swagger`.
 
-```mermaid
-graph TD
-    A[MySupplyChain.Tests]
+### Option 2: Local Development
 
-    A --> B[Domain]
-    B --> B1[ProductTests.cs<br/>Entity validation]
+```bash
+# 1. Set up user secrets for JWT
+cd MySupplyChain.API
+dotnet user-secrets init
+dotnet user-secrets set "JwtSettings:Secret" "YourDevSecretKey_MustBeAtLeast32Characters!"
 
-    A --> C[Application]
-    C --> C1[Products/]
-    C1 --> C1a[RestockProductCommandHandlerTests.cs<br/>Command handler]
-    C1 --> C1b[CreateOrderCommandHandlerTests.cs<br/>Command handler]
+# 2. Update connection string in appsettings.json to point to your SQL Server
 
-    A --> D[Infrastructure]
-    D --> D1[DemandForecasterTests.cs<br/>ML fallback logic]
+# 3. Run migrations
+dotnet ef database update --project MySupplyChain.Infrastructure --startup-project MySupplyChain.API
 
-    A --> E[API]
-    E --> E1[ProductsControllerTests.cs<br/>E2E integration tests]
+# 4. Train the ML model on the Kaggle dataset (place train.csv in data/)
+    dotnet run --project MySupplyChain.ModelTrainer -c Release
+
+# 5. Run the API
+dotnet run --project MySupplyChain.API
 ```
 
-### What's Tested
+### Training Data
 
-- ✅ **Stock Management:** Restocking products with valid/invalid quantities
-- ✅ **Order Processing:** Stock reduction and insufficient stock scenarios
-- ✅ **Automatic Reordering:** Reorder request generation when stock is low
-- ✅ **AI Forecasting:** ML model fallback behavior
-- ✅ **End-to-End Workflows:** Full API integration tests
+The model trainer uses the [Kaggle Store Item Demand Forecasting](https://www.kaggle.com/c/demand-forecasting-kernels-only) dataset.
 
-For detailed testing information, see [MySupplyChain.Tests/README.md](MySupplyChain.Tests/README.md).
+Place the files in the `data/` directory at the solution root:
 
-## 🔄 Data Flow Example
+| File | Description | Used by trainer? |
+|---|---|---|
+| `data/train.csv` | 913,000 rows of daily sales across 10 stores × 50 items, 2013–2017 | ✅ Yes — default input |
 
-**Scenario: A customer places an order.**
+**Expected schema for `train.csv`:**
+```
+date,store,item,sales
+2013-01-01,1,1,13
+```
 
-1.  **API:** `OrdersController` receives `POST /api/orders`.
-2.  **Application:** `CreateOrderCommandHandler` executes.
-    - Deducts stock from the **Domain** `Product` entity.
-    - Saves changes via **Infrastructure** `ApplicationDbContext`.
-3.  **Logic:** Handler checks if `CurrentStock < ReorderPoint`.
-4.  **AI Trigger:** If low stock, handler calls `IDemandForecaster`.
-5.  **Infrastructure:** `DemandForecaster` uses the **ML.NET** model to predict need.
-6.  **Result:** A new `ReorderRequest` is saved to the database with a justification like _"Predicted demand of 25 units over the next 30 days."_
+The trainer groups rows by `item`, trains a separate SSA model per product, and saves each to `MySupplyChain.Infrastructure/MLModels/`.
 
-## 📁 Project Structure
+To train with a custom CSV (must match the same 4-column schema):
+```bash
+dotnet run --project MySupplyChain.ModelTrainer -c Release -- --data=path/to/your/data.csv
+```
 
-Each project has its own detailed README with architecture specifics:
+## API Endpoints
 
-- 📦 [MySupplyChain.Domain](MySupplyChain.Domain/README.md) - Core business entities
-- ⚙️ [MySupplyChain.Application](MySupplyChain.Application/README.md) - Business logic and CQRS handlers
-- 🔧 [MySupplyChain.Infrastructure](MySupplyChain.Infrastructure/README.md) - Database and ML.NET implementation
-- 🌐 [MySupplyChain.API](MySupplyChain.API/README.md) - RESTful API endpoints
-- 🤖 [MySupplyChain.ModelTrainer](MySupplyChain.ModelTrainer/README.md) - ML model training
-- 🧪 [MySupplyChain.Tests](MySupplyChain.Tests/README.md) - Comprehensive test suite
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/register` | Register a new user |
+| `POST` | `/api/auth/login` | Authenticate and receive JWT |
+| `GET` | `/api/products` | List all products |
+| `POST` | `/api/products` | Create a product |
+| `GET` | `/api/products/{id}/forecast?daysToForecast=30` | Get AI demand forecast |
+| `POST` | `/api/products/{id}/restock` | Restock a product |
+| `POST` | `/api/orders` | Place an order (auto-triggers reorder if stock is low) |
+
+All endpoints except auth require a valid JWT Bearer token.
+
+## Testing
+
+```bash
+# Run all 23 tests
+dotnet test
+
+# Run with coverage
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+**Test Coverage:**
+- **Unit tests** — DemandForecaster (5 tests), Domain validation
+- **Integration tests** — Full API lifecycle via `WebApplicationFactory` with in-memory EF Core
+- **Auth tests** — Registration, login, token validation, duplicate user handling
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Runtime | .NET 10 / ASP.NET Core 10 |
+| ORM | Entity Framework Core 10 |
+| Database | SQL Server 2022 |
+| Auth | JWT Bearer + ASP.NET Core Identity |
+| ML | ML.NET 5.0 (SSA Time Series) |
+| CQRS | MediatR 14 |
+| Logging | Serilog (structured, rolling file + console) |
+| Testing | xUnit + Moq + FluentAssertions |
+| Benchmarking | BenchmarkDotNet (latency + memory allocation) |
+| CI | GitHub Actions |
+| Containerization | Docker + Docker Compose |
+
+## License
+
+[MIT](LICENSE)

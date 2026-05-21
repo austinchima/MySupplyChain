@@ -1,252 +1,227 @@
-﻿using Microsoft.ML;
+using Microsoft.ML;
+using Microsoft.ML.Transforms.TimeSeries;
 using MySupplyChain.Infrastructure.MachineLearning.DataModels;
 
 namespace MySupplyChain.ModelTrainer;
 
-/// <summary>
-/// Console app to train the ML.NET demand forecasting model with realistic data
-/// </summary>
 class Program
 {
+    private const int DefaultHorizon = 30;
+    private const int DefaultWindowSize = 7;
+    private const int DefaultSeriesLength = 365;
+    private const float ConfidenceLevel = 0.95f;
+
     static void Main(string[] args)
     {
-        Console.WriteLine("🤖 MySupplyChain - Advanced ML Model Trainer");
-        Console.WriteLine("=============================================\n");
+        Console.WriteLine("🤖 MySupplyChain — SSA Time Series Model Trainer");
+        Console.WriteLine("=================================================\n");
 
         var mlContext = new MLContext(seed: 0);
-        
-        // Parse command line arguments
-        var useExistingData = args.Contains("--use-existing");
-        var algorithm = GetAlgorithm(args);
-        var dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sales_data.csv");
 
-        IDataView dataView;
-        
-        if (useExistingData && File.Exists(dataPath))
-        {
-            Console.WriteLine("📊 Loading existing training data...");
-            dataView = mlContext.Data.LoadFromTextFile<ModelInput>(
-                path: dataPath,
-                hasHeader: true,
-                separatorChar: ',');
-        }
-        else
-        {
-            Console.WriteLine("🎲 Generating realistic historical sales data...");
-            
-            // Generate 5 years of data with all features
-            var startDate = DateTime.Now.AddYears(-2);
-            var trainingData = DataGenerator.GenerateHistoricalData(
-                startDate: startDate,
-                days: 365*15, // 15 years
-                includeSeasonality: true,
-                includePromotions: true,
-                includeStockouts: true
-            );
+        var dataPath = args.FirstOrDefault(a => a.StartsWith("--data="))?.Split('=')[1]
+                       ?? Path.Combine(GetSolutionRoot(), "data", "train.csv");
 
-            // Export to CSV for future use
-            DataGenerator.ExportToCsv(trainingData, dataPath);
-            
-            // Load into ML.NET
-            dataView = mlContext.Data.LoadFromEnumerable(trainingData);
+        if (!File.Exists(dataPath))
+        {
+            Console.WriteLine($"📊 Training data not found at {dataPath}");
+            Console.WriteLine("🎲 Generating synthetic time series data...\n");
+            Directory.CreateDirectory(Path.GetDirectoryName(dataPath)!);
+            TimeSeriesDataGenerator.GenerateAndExport(dataPath);
         }
 
-        var rowCount = mlContext.Data.CreateEnumerable<ModelInput>(dataView, reuseRowObject: false).Count();
-        Console.WriteLine($"✓ Loaded {rowCount} training records\n");
+        Console.WriteLine($"📂 Loading data from: {dataPath}");
 
-        // Split data for training and evaluation
-        var trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
-        var trainData = trainTestSplit.TrainSet;
-        var testData = trainTestSplit.TestSet;
+        // Load CSV: date,store,item,sales
+        var rawData = LoadTimeSeriesData(dataPath);
+        Console.WriteLine($"✓ Loaded {rawData.Count} daily records across {rawData.Select(r => r.Item).Distinct().Count()} products\n");
 
-        // Build and train model
-        var model = BuildAndTrainModel(mlContext, trainData, algorithm);
-        
-        // Evaluate model
-        EvaluateModel(mlContext, model, testData);
-        
-        // Save the model
-        SaveModel(mlContext, model, dataView);
-        
-        // Test predictions
-        TestPredictions(mlContext, model);
+        // Train a separate SSA model per product for maximum accuracy
+        var products = rawData.Select(r => r.Item).Distinct().OrderBy(x => x).ToList();
 
-        Console.WriteLine("\n✅ Training complete! You can now use this model in the API.\n");
+        foreach (var productId in products)
+        {
+            Console.WriteLine($"\n{'=',-50}");
+            Console.WriteLine($"📦 Training SSA model for Product {productId}");
+            Console.WriteLine($"{'=',-50}");
+
+            var productData = rawData
+                .Where(r => r.Item == productId)
+                .OrderBy(r => r.Date)
+                .Select(r => new SsaModelInput { UnitsSold = r.Sales })
+                .ToList();
+
+            Console.WriteLine($"  • Time series length: {productData.Count} days");
+            Console.WriteLine($"  • Date range: {rawData.Where(r => r.Item == productId).Min(r => r.Date):yyyy-MM-dd} → " +
+                            $"{rawData.Where(r => r.Item == productId).Max(r => r.Date):yyyy-MM-dd}");
+
+            // Split: 80% train, 20% evaluation
+            var splitPoint = (int)(productData.Count * 0.8);
+            var trainData = productData.Take(splitPoint).ToList();
+            var evalData = productData.Skip(splitPoint).ToList();
+
+            Console.WriteLine($"  • Train set: {trainData.Count} days | Eval set: {evalData.Count} days");
+
+            var dataView = mlContext.Data.LoadFromEnumerable(trainData);
+
+            var windowSize = Math.Min(DefaultWindowSize, trainData.Count / 4);
+            var seriesLength = Math.Min(DefaultSeriesLength, trainData.Count);
+
+            Console.WriteLine($"  • SSA params: windowSize={windowSize}, seriesLength={seriesLength}, horizon={DefaultHorizon}");
+
+            // Build SSA pipeline
+            var pipeline = mlContext.Forecasting.ForecastBySsa(
+                outputColumnName: nameof(SsaForecastOutput.ForecastedUnits),
+                inputColumnName: nameof(SsaModelInput.UnitsSold),
+                windowSize: windowSize,
+                seriesLength: seriesLength,
+                trainSize: trainData.Count,
+                horizon: DefaultHorizon,
+                confidenceLevel: ConfidenceLevel,
+                confidenceLowerBoundColumn: nameof(SsaForecastOutput.LowerBound),
+                confidenceUpperBoundColumn: nameof(SsaForecastOutput.UpperBound));
+
+            Console.Write("  ⏳ Training...");
+            var model = pipeline.Fit(dataView);
+            Console.WriteLine(" ✅ Done");
+
+            // Evaluate on hold-out set
+            EvaluateModel(mlContext, model, evalData, productId);
+
+            // Save model
+            SaveModel(mlContext, model, dataView, productId);
+
+            // Test predictions
+            TestPredictions(mlContext, model, productId);
+        }
+
+        // Also save a combined "default" model using all products aggregated
+        Console.WriteLine("\n\n📊 Training aggregated default model (all products)...");
+        var allSales = rawData
+            .GroupBy(r => r.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new SsaModelInput { UnitsSold = g.Sum(x => x.Sales) })
+            .ToList();
+
+        var defaultView = mlContext.Data.LoadFromEnumerable(allSales);
+        var defaultPipeline = mlContext.Forecasting.ForecastBySsa(
+            outputColumnName: nameof(SsaForecastOutput.ForecastedUnits),
+            inputColumnName: nameof(SsaModelInput.UnitsSold),
+            windowSize: DefaultWindowSize,
+            seriesLength: Math.Min(DefaultSeriesLength, allSales.Count),
+            trainSize: allSales.Count,
+            horizon: DefaultHorizon,
+            confidenceLevel: ConfidenceLevel,
+            confidenceLowerBoundColumn: nameof(SsaForecastOutput.LowerBound),
+            confidenceUpperBoundColumn: nameof(SsaForecastOutput.UpperBound));
+
+        var defaultModel = defaultPipeline.Fit(defaultView);
+
+        var solutionRoot = GetSolutionRoot();
+        var defaultPath = Path.Combine(solutionRoot, "MySupplyChain.Infrastructure", "MLModels", "sales_model.zip");
+        Directory.CreateDirectory(Path.GetDirectoryName(defaultPath)!);
+        mlContext.Model.Save(defaultModel, defaultView.Schema, defaultPath);
+        Console.WriteLine($"  💾 Default model saved: {defaultPath}");
+
+        Console.WriteLine("\n\n✅ All SSA models trained and saved successfully!");
+        Console.WriteLine("   You can now run the API with demand forecasting enabled.\n");
     }
 
-    /// <summary>
-    /// Builds and trains the ML model with the specified algorithm
-    /// </summary>
-    static ITransformer BuildAndTrainModel(MLContext mlContext, IDataView trainData, string algorithm)
+    static void EvaluateModel(MLContext mlContext, ITransformer model, List<SsaModelInput> evalData, int productId)
     {
-        Console.WriteLine($"🔧 Building ML pipeline with {algorithm} algorithm...");
+        var engine = model.CreateTimeSeriesEngine<SsaModelInput, SsaForecastOutput>(mlContext);
+        var prediction = engine.Predict();
 
-        // Feature engineering pipeline
-        var pipeline = mlContext.Transforms.CopyColumns("Label", nameof(ModelInput.QuantitySold))
-            .Append(mlContext.Transforms.Concatenate("Features",
-                nameof(ModelInput.ProductId),
-                nameof(ModelInput.Price),
-                nameof(ModelInput.DayOfWeek),
-                nameof(ModelInput.Month)))
-            .Append(mlContext.Transforms.NormalizeMinMax("Features"));
-
-        // Add the selected algorithm
-        IEstimator<ITransformer> trainer;
-        switch (algorithm.ToLower())
+        var horizon = Math.Min(prediction.ForecastedUnits.Length, evalData.Count);
+        if (horizon == 0)
         {
-            case "lightgbm":
-                trainer = mlContext.Regression.Trainers.LightGbm(
-                    labelColumnName: "Label",
-                    featureColumnName: "Features",
-                    numberOfLeaves: 50,
-                    minimumExampleCountPerLeaf: 10,
-                    learningRate: 0.1);
-                break;
-                
-            case "fasttree":
-                trainer = mlContext.Regression.Trainers.FastTree(
-                    labelColumnName: "Label",
-                    featureColumnName: "Features",
-                    numberOfLeaves: 50,
-                    minimumExampleCountPerLeaf: 10,
-                    learningRate: 0.1);
-                break;
-                
-            case "fastforest":
-                trainer = mlContext.Regression.Trainers.FastForest(
-                    labelColumnName: "Label",
-                    featureColumnName: "Features",
-                    numberOfTrees: 100,
-                    numberOfLeaves: 50);
-                break;
-                
-            case "sdca":
-                trainer = mlContext.Regression.Trainers.Sdca(
-                    labelColumnName: "Label",
-                    featureColumnName: "Features");
-                break;
-                
-            default:
-                trainer = mlContext.Regression.Trainers.LightGbm(
-                    labelColumnName: "Label",
-                    featureColumnName: "Features");
-                break;
+            Console.WriteLine("  ⚠️ No evaluation data available");
+            return;
         }
 
-        var fullPipeline = pipeline.Append(trainer);
-        Console.WriteLine("✓ Pipeline configured\n");
+        var actuals = evalData.Take(horizon).Select(e => e.UnitsSold).ToArray();
+        var predicted = prediction.ForecastedUnits.Take(horizon).ToArray();
 
-        // Train the model
-        Console.WriteLine("🎯 Training model...");
-        var model = fullPipeline.Fit(trainData);
-        Console.WriteLine("✓ Training complete!\n");
+        var mse = actuals.Zip(predicted, (a, p) => MathF.Pow(a - p, 2)).Average();
+        var rmse = MathF.Sqrt(mse);
+        var mae = actuals.Zip(predicted, (a, p) => MathF.Abs(a - p)).Average();
+        var meanActual = actuals.Average();
+        var ssTot = actuals.Sum(a => MathF.Pow(a - meanActual, 2));
+        var ssRes = actuals.Zip(predicted, (a, p) => MathF.Pow(a - p, 2)).Sum();
+        var r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
 
-        return model;
+        Console.WriteLine($"\n  📈 Evaluation (Product {productId}, {horizon}-day holdout):");
+        Console.WriteLine($"     R²   = {r2:F4}");
+        Console.WriteLine($"     RMSE = {rmse:F2}");
+        Console.WriteLine($"     MAE  = {mae:F2}");
+        Console.WriteLine($"     MSE  = {mse:F2}");
+
+        var quality = r2 switch
+        {
+            >= 0.7f => "🟢 Good",
+            >= 0.4f => "🟡 Fair",
+            _ => "🔴 Poor"
+        };
+        Console.WriteLine($"     Quality: {quality}");
     }
 
-    /// <summary>
-    /// Evaluates the trained model and prints metrics
-    /// </summary>
-    static void EvaluateModel(MLContext mlContext, ITransformer model, IDataView testData)
-    {
-        Console.WriteLine("📊 Evaluating model performance...");
-        
-        var predictions = model.Transform(testData);
-        var metrics = mlContext.Regression.Evaluate(predictions);
-
-        Console.WriteLine("📈 Model Evaluation Metrics:");
-        Console.WriteLine("============================");
-        Console.WriteLine($"R-Squared (R²):           {metrics.RSquared:F4}");
-        Console.WriteLine($"Mean Absolute Error:      {metrics.MeanAbsoluteError:F2}");
-        Console.WriteLine($"Mean Squared Error:       {metrics.MeanSquaredError:F2}");
-        Console.WriteLine($"Root Mean Squared Error:  {metrics.RootMeanSquaredError:F2}");
-        Console.WriteLine($"Loss Function:            {metrics.LossFunction:F2}");
-
-        // Interpretation
-        Console.WriteLine("\n🎯 Model Quality Assessment:");
-        if (metrics.RSquared >= 0.8)
-            Console.WriteLine("✅ Excellent model (R² ≥ 0.8)");
-        else if (metrics.RSquared >= 0.6)
-            Console.WriteLine("✅ Good model (R² ≥ 0.6)");
-        else if (metrics.RSquared >= 0.4)
-            Console.WriteLine("⚠️  Fair model (R² ≥ 0.4) - consider more data or features");
-        else
-            Console.WriteLine("❌ Poor model (R² < 0.4) - needs improvement");
-
-        Console.WriteLine($"📊 On average, predictions are off by {metrics.MeanAbsoluteError:F1} units");
-        Console.WriteLine();
-    }
-
-    /// <summary>
-    /// Saves the trained model
-    /// </summary>
-    static void SaveModel(MLContext mlContext, ITransformer model, IDataView dataView)
+    static void SaveModel(MLContext mlContext, ITransformer model, IDataView dataView, int productId)
     {
         var solutionRoot = GetSolutionRoot();
-        var outputPath = Path.Combine(solutionRoot, "MySupplyChain.Infrastructure", "MLModels", "sales_model.zip");
-
+        var outputPath = Path.Combine(solutionRoot, "MySupplyChain.Infrastructure", "MLModels", $"ssa_product_{productId}.zip");
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         mlContext.Model.Save(model, dataView.Schema, outputPath);
-
-        Console.WriteLine($"💾 Model saved to: {outputPath}");
+        Console.WriteLine($"  💾 Model saved: {outputPath}");
     }
 
-    /// <summary>
-    /// Tests the model with sample predictions
-    /// </summary>
-    static void TestPredictions(MLContext mlContext, ITransformer model)
+    static void TestPredictions(MLContext mlContext, ITransformer model, int productId)
     {
-        Console.WriteLine("🧪 Testing sample predictions...");
-        
-        var predictionEngine = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(model);
+        var engine = model.CreateTimeSeriesEngine<SsaModelInput, SsaForecastOutput>(mlContext);
+        var prediction = engine.Predict();
 
-        var testCases = new[]
-        {
-            new ModelInput { ProductId = 1, Price = 1299.99f, DayOfWeek = 2, Month = 11 }, // Laptop, Tuesday, November
-            new ModelInput { ProductId = 3, Price = 29.99f, DayOfWeek = 5, Month = 12 },   // Mouse, Friday, December
-            new ModelInput { ProductId = 2, Price = 299.99f, DayOfWeek = 1, Month = 6 },   // Printer, Monday, June
-        };
+        Console.WriteLine($"\n  🔮 {DefaultHorizon}-Day Forecast (Product {productId}):");
+        Console.WriteLine($"     {"Day",-5} {"Forecast",-10} {"Lower",-10} {"Upper",-10}");
+        Console.WriteLine($"     {new string('-', 35)}");
 
-        Console.WriteLine("Sample Predictions:");
-        Console.WriteLine("==================");
-        
-        foreach (var testCase in testCases)
+        for (int i = 0; i < Math.Min(7, prediction.ForecastedUnits.Length); i++)
         {
-            var prediction = predictionEngine.Predict(testCase);
-            Console.WriteLine($"Product {testCase.ProductId} (${testCase.Price}, {GetDayName((int)testCase.DayOfWeek)}, Month {testCase.Month}): {prediction.PredictedDemand:F1} units");
+            var f = MathF.Max(0, prediction.ForecastedUnits[i]);
+            var l = MathF.Max(0, prediction.LowerBound[i]);
+            var u = MathF.Max(0, prediction.UpperBound[i]);
+            Console.WriteLine($"     {i + 1,-5} {f,-10:F1} {l,-10:F1} {u,-10:F1}");
         }
-        
-        Console.WriteLine();
+
+        if (prediction.ForecastedUnits.Length > 7)
+            Console.WriteLine($"     ... ({prediction.ForecastedUnits.Length - 7} more days)");
+
+        var total = prediction.ForecastedUnits.Select(x => MathF.Max(0, x)).Sum();
+        Console.WriteLine($"\n     Total {DefaultHorizon}-day forecast: {total:F1} units");
     }
 
-    /// <summary>
-    /// Gets algorithm from command line arguments
-    /// </summary>
-    static string GetAlgorithm(string[] args)
+    static List<TimeSeriesRecord> LoadTimeSeriesData(string path)
     {
-        var algorithmArg = args.FirstOrDefault(arg => arg.StartsWith("--algorithm="));
-        return algorithmArg?.Split('=')[1] ?? "lightgbm";
+        var records = new List<TimeSeriesRecord>();
+        foreach (var line in File.ReadLines(path).Skip(1)) // Skip header
+        {
+            var parts = line.Split(',');
+            if (parts.Length >= 4 &&
+                DateTime.TryParse(parts[0], out var date) &&
+                int.TryParse(parts[1], out var store) &&
+                int.TryParse(parts[2], out var item) &&
+                float.TryParse(parts[3], out var sales))
+            {
+                records.Add(new TimeSeriesRecord(date, store, item, sales));
+            }
+        }
+        return records;
     }
 
-    /// <summary>
-    /// Gets day name from day of week number
-    /// </summary>
-    static string GetDayName(int dayOfWeek)
-    {
-        return ((DayOfWeek)dayOfWeek).ToString();
-    }
-
-    /// <summary>
-    /// Finds the solution root directory
-    /// </summary>
     static string GetSolutionRoot()
     {
         var directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
         while (directory != null && directory.GetFiles("*.slnx").Length == 0 && directory.GetFiles("*.sln").Length == 0)
-        {
             directory = directory.Parent;
-        }
-
         return directory?.FullName ?? throw new Exception("Could not find solution root");
     }
 }
+
+record TimeSeriesRecord(DateTime Date, int Store, int Item, float Sales);
