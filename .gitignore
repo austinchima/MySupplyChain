@@ -135,6 +135,10 @@ appsettings.*.local.json
 # Training data (generated or downloaded)
 data/
 
-# Local environment secrets — never commit
+# Local environment secrets  never commit
 .env
 !.env.example
+
+# ML.NET models (large binary files)
+MySupplyChain.Infrastructure/MLModels/*.zip
+*.onnx
