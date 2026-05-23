@@ -57,7 +57,7 @@ try
         {
             var requirement = new OpenApiSecurityRequirement();
             var schemeRef = new OpenApiSecuritySchemeReference("Bearer", doc);
-            requirement.Add(schemeRef, new List<string>());
+            requirement.Add(schemeRef, []);
             return requirement;
         });
 
@@ -69,7 +69,11 @@ try
 
     builder.Services.AddDataProtection();
 
-    builder.Services.AddIdentityCore<MySupplyChain.Domain.Entities.User>()
+    builder.Services.AddIdentityCore<MySupplyChain.Domain.Entities.User>(options =>
+    {
+        //Add spaces to the allowed user name characters
+        options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ ";
+    })
         .AddEntityFrameworkStores<MySupplyChain.Infrastructure.Persistence.ApplicationDbContext>()
         .AddSignInManager()
         .AddDefaultTokenProviders();

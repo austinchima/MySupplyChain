@@ -11,11 +11,10 @@ namespace MySupplyChain.Infrastructure.MachineLearning;
 /// Uses time series decomposition to capture seasonality, trend, and noise for
 /// multi-day forecasting with confidence intervals.
 /// </summary>
-public class DemandForecaster : IDemandForecaster
+public partial class DemandForecaster : IDemandForecaster
 {
     private readonly MLContext _mlContext;
     private readonly ITransformer? _model;
-    private readonly string _modelPath;
     private readonly ILogger<DemandForecaster> _logger;
 
     public bool IsModelLoaded => _model != null;
@@ -23,25 +22,28 @@ public class DemandForecaster : IDemandForecaster
     public DemandForecaster(string modelPath, ILogger<DemandForecaster> logger)
     {
         _mlContext = new MLContext(seed: 0);
-        _modelPath = modelPath;
         _logger = logger;
+
+        var modelFileName = Path.GetFileName(modelPath);
 
         try
         {
-            if (File.Exists(_modelPath))
+            if (File.Exists(modelPath))
             {
-                _model = _mlContext.Model.Load(_modelPath, out _);
-                _logger.LogInformation("SSA forecast model loaded: {ModelFile}", Path.GetFileName(_modelPath));
+                _model = _mlContext.Model.Load(modelPath, out _);
+                if (_logger.IsEnabled(LogLevel.Information))
+                    LogModelLoaded(modelFileName);
             }
             else
             {
-                _logger.LogInformation("No SSA model found at startup. Expected file: {ModelFile}",
-                    Path.GetFileName(_modelPath));
+                if (_logger.IsEnabled(LogLevel.Information))
+                    LogNoModelFound(modelFileName);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load SSA model file {ModelFile}", Path.GetFileName(_modelPath));
+            if (_logger.IsEnabled(LogLevel.Error))
+                LogModelLoadError(ex, modelFileName);
             _model = null;
         }
     }
@@ -76,9 +78,8 @@ public class DemandForecaster : IDemandForecaster
             // Compute RMSE/MAE from hold-out tail if we have enough data
             var (rmse, mae) = ComputeAccuracyMetrics(salesList, forecasted);
 
-            _logger.LogInformation(
-                "SSA forecast generated for product {ProductId} (SKU={Sku}). Horizon={Horizon} days, RMSE={Rmse:F2}, MAE={Mae:F2}",
-                productId, sku, horizon, rmse, mae);
+            if (_logger.IsEnabled(LogLevel.Information))
+                LogForecastGenerated(productId, sku, horizon, rmse, mae);
 
             return Task.FromResult(new ForecastResult
             {
@@ -91,9 +92,8 @@ public class DemandForecaster : IDemandForecaster
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "SSA prediction failed for product {ProductId} with {HistoricalCount} data points. Falling back to moving average.",
-                productId, salesList.Count);
+            if (_logger.IsEnabled(LogLevel.Error))
+                LogPredictionError(ex, productId, salesList.Count);
 
             return Task.FromResult(BuildFallbackForecast(productId, salesList, horizon));
         }
@@ -109,9 +109,8 @@ public class DemandForecaster : IDemandForecaster
             ? MathF.Sqrt(salesList.Select(s => MathF.Pow(s - avg, 2)).Average())
             : avg * 0.2f;
 
-        _logger.LogWarning(
-            "Model not loaded or insufficient data. Returning moving average fallback for product {ProductId} based on {Count} points.",
-            productId, salesList.Count);
+        if (_logger.IsEnabled(LogLevel.Warning))
+            LogFallbackForecast(productId, salesList.Count);
 
         var forecasted = Enumerable.Repeat(MathF.Max(0, avg), horizon).ToArray();
         var lower = Enumerable.Repeat(MathF.Max(0, avg - 1.96f * stdDev), horizon).ToArray();
@@ -153,7 +152,7 @@ public class DemandForecaster : IDemandForecaster
     /// Computes RMSE and MAE by comparing the tail of historical data against
     /// the first N forecast values as a proxy for accuracy.
     /// </summary>
-    private static (float Rmse, float Mae) ComputeAccuracyMetrics(List<float> historical, float[] forecast)
+    private static (float Rmse, float Mae) ComputeAccuracyMetrics(List<float> historical, float[] _)
     {
         // Use the last 7 days of actual data (if available) compared with
         // the moving average to estimate error bounds
@@ -171,4 +170,22 @@ public class DemandForecaster : IDemandForecaster
 
         return (rmse, mae);
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "SSA forecast model loaded: {ModelFile}")]
+    private partial void LogModelLoaded(string modelFile);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "No SSA model found at startup. Expected file: {ModelFile}")]
+    private partial void LogNoModelFound(string modelFile);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to load SSA model file {ModelFile}")]
+    private partial void LogModelLoadError(Exception ex, string modelFile);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "SSA forecast generated for product {ProductId} (SKU={Sku}). Horizon={Horizon} days, RMSE={Rmse:F2}, MAE={Mae:F2}")]
+    private partial void LogForecastGenerated(int productId, string sku, int horizon, float rmse, float mae);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "SSA prediction failed for product {ProductId} with {HistoricalCount} data points. Falling back to moving average.")]
+    private partial void LogPredictionError(Exception ex, int productId, int historicalCount);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Model not loaded or insufficient data. Returning moving average fallback for product {ProductId} based on {Count} points.")]
+    private partial void LogFallbackForecast(int productId, int count);
 }

@@ -58,6 +58,7 @@ The forecasting engine uses **Singular Spectrum Analysis (SSA)** via `Microsoft.
 
 ### Prerequisites
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Entity Framework Core Tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet) (`dotnet tool install --global dotnet-ef`)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for containerized setup)
 
 ### Option 1: Docker Compose (recommended)
@@ -82,7 +83,7 @@ dotnet user-secrets set "JwtSettings:Secret" "YourDevSecretKey_MustBeAtLeast32Ch
 dotnet ef database update --project MySupplyChain.Infrastructure --startup-project MySupplyChain.API
 
 # 4. Train the ML model on the Kaggle dataset (place train.csv in data/)
-    dotnet run --project MySupplyChain.ModelTrainer -c Release
+dotnet run --project MySupplyChain.ModelTrainer -c Release
 
 # 5. Run the API
 dotnet run --project MySupplyChain.API

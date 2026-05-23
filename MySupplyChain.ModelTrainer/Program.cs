@@ -6,8 +6,13 @@ namespace MySupplyChain.ModelTrainer;
 
 class Program
 {
+    //How much we want to predict (future days)
     private const int DefaultHorizon = 30;
-    private const int DefaultWindowSize = 7;
+    
+    //How far back to look to find the pattern
+    private const int DefaultWindowSize = 60;
+    
+    //Length of the time series to use for training
     private const int DefaultSeriesLength = 365;
     private const float ConfidenceLevel = 0.95f;
 
@@ -46,8 +51,9 @@ class Program
 
             var productData = rawData
                 .Where(r => r.Item == productId)
-                .OrderBy(r => r.Date)
-                .Select(r => new SsaModelInput { UnitsSold = r.Sales })
+                .GroupBy(r => r.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new SsaModelInput { UnitsSold = g.Sum(r => r.Sales) })
                 .ToList();
 
             Console.WriteLine($"  • Time series length: {productData.Count} days");
