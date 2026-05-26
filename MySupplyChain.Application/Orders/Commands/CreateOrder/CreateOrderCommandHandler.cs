@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using MySupplyChain.Application.Common.Exceptions;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Domain.Entities;
 
@@ -14,10 +15,10 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
             .FindAsync([request.ProductId], cancellationToken);
 
         if (product == null)
-            throw new Exception($"Product {request.ProductId} not found");
+            throw new NotFoundException($"Product {request.ProductId} not found");
 
         if (product.CurrentStock < request.Quantity)
-             throw new Exception($"Insufficient stock for Product {product.Name}. Requested: {request.Quantity}, Available: {product.CurrentStock}");
+             throw new ValidationException(new Dictionary<string, string[]> { { "Quantity", new[] { "Insufficient stock" } } });
 
         // Decrement stock
         product.CurrentStock -= request.Quantity;
