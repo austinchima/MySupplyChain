@@ -2,7 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Application.Products.Commands.CreateProduct;
+using MySupplyChain.Application.Products.Commands.DeleteProduct;
 using MySupplyChain.Application.Products.Commands.RestockProduct;
+using MySupplyChain.Application.Products.Commands.UpdateProduct;
 using MySupplyChain.Application.Products.Queries.GetAllProducts;
 using MySupplyChain.Application.Products.Queries.GetProductForecast;
 

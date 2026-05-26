@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Application.Orders.Commands.CreateOrder;
+using MySupplyChain.Application.Orders.Commands.DeleteOrder;
+using MySupplyChain.Application.Orders.Commands.UpdateOrder;
 using MySupplyChain.Application.Orders.Queries.GetOrders;
 
 namespace MySupplyChain.API.Controllers;
