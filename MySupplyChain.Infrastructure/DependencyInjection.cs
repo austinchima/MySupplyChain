@@ -80,7 +80,7 @@ public static class DependencyInjection
             var username = userInfo[0];
             var password = userInfo.Length > 1 ? userInfo[1] : "";
             var host = uri.Host;
-            var port = uri.Port;
+            var port = uri.Port > 0 ? uri.Port : 5432;
             var database = uri.AbsolutePath.TrimStart('/');
 
             // Render specific: Force SSL Mode and trust server certificate for secure connections
