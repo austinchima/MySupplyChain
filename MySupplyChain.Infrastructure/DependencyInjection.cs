@@ -22,9 +22,13 @@ public static class DependencyInjection
     {
         // Register EF Core with PostgreSQL provider
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.")));
+        {
+            var rawConnection = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+            
+            var connectionString = ConvertPostgresUriToConnectionString(rawConnection);
+            options.UseNpgsql(connectionString);
+        });
 
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
@@ -65,6 +69,24 @@ public static class DependencyInjection
         }
 
         return services;
+    }
+
+    private static string ConvertPostgresUriToConnectionString(string connectionString)
+    {
+        if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+        {
+            var uri = new Uri(connectionString);
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+            var host = uri.Host;
+            var port = uri.Port;
+            var database = uri.AbsolutePath.TrimStart('/');
+
+            // Render specific: Force SSL Mode and trust server certificate for secure connections
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+        }
+        return connectionString;
     }
 }
 
