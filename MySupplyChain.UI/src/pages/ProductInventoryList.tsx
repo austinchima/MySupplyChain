@@ -307,7 +307,7 @@ export default function ProductInventoryList() {
       <CsvImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        onImportSuccess={(summary) => {
+        onImportSuccess={() => {
           fetchProducts();
         }}
       />
