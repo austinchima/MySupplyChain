@@ -78,6 +78,11 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
             {
                 date = DateTime.UtcNow; // Fallback
             }
+            else
+            {
+                // PostgreSQL requires Kind=Utc for 'timestamp with time zone'
+                date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+            }
 
             var quantityStr = csv.GetField<string>(request.QuantityColumn);
             if (!int.TryParse(quantityStr, out var quantity))
