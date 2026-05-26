@@ -1,5 +1,5 @@
 interface StatusBadgeProps {
-  variant: "healthy" | "low-stock" | "out-of-stock" | "processing" | "shipped" | "delivered";
+  variant: "healthy" | "low-stock" | "out-of-stock" | "processing" | "shipped" | "delivered" | "cancelled";
   label?: string;
 }
 
@@ -29,6 +29,11 @@ const variantStyles: Record<StatusBadgeProps["variant"], { bg: string; text: str
   delivered: {
     bg: "bg-secondary-container/20 text-secondary border border-secondary/20",
     text: "Delivered",
+  },
+  cancelled: {
+    bg: "bg-error-container/20 text-error border border-error/20",
+    text: "Cancelled",
+    icon: "cancel",
   },
 };
 

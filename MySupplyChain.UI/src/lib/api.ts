@@ -3,6 +3,7 @@ import type {
   ProductDto,
   ProductForecastDto,
   ReorderRequestDto,
+  OrderDto,
   CreateProductRequest,
   RestockProductRequest,
   RestockResponse,
@@ -101,6 +102,9 @@ export const products = {
 // ─── Orders ────────────────────────────────────────────────────────────────
 
 export const orders = {
+  /** GET /api/orders → OrderDto[] */
+  getAll: () => request<OrderDto[]>("/orders"),
+
   /** POST /api/orders → OrderResponse */
   create: (data: CreateOrderRequest) =>
     request<OrderResponse>("/orders", {

@@ -39,6 +39,17 @@ export interface ReorderRequestDto {
   justification: string | null;
 }
 
+/** Mirrors: MySupplyChain.Application.Orders.Queries.GetOrders.OrderDto */
+export interface OrderDto {
+  id: number;
+  orderNumber: string;
+  date: string;
+  customer: string;
+  items: number;
+  status: string;
+  total: string;
+}
+
 // ─── Command / Request shapes ──────────────────────────────────────────────
 
 /** Mirrors: CreateProductCommand */

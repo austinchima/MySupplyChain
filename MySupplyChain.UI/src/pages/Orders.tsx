@@ -1,43 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Topbar from "../components/Topbar";
 import StatusBadge from "../components/StatusBadge";
 import CreateOrderModal from "../components/CreateOrderModal";
+import { orders as ordersApi } from "../lib/api";
+import type { OrderDto } from "../types/api";
 
-type OrderStatus = "processing" | "shipped" | "delivered";
+type StatusVariant = "processing" | "shipped" | "delivered" | "cancelled";
 
-interface Order {
-  id: string;
-  date: string;
-  customer: string;
-  items: number;
-  status: OrderStatus;
-  total: string;
+function statusVariant(status: string): StatusVariant {
+  const s = status.toLowerCase();
+  if (s === "shipped") return "shipped";
+  if (s === "delivered") return "delivered";
+  if (s === "cancelled") return "cancelled";
+  return "processing";
 }
 
-// NOTE: The backend currently only supports POST /api/orders (create).
-// There is no GET /api/orders endpoint. This data is mock/static until
-// a GetAllOrders query is added to the backend.
-const ordersData: Order[] = [
-  { id: "#ORD-7782", date: "Oct 24, 14:30", customer: "Acme Corp Logistics", items: 12, status: "processing", total: "$12,450.00" },
-  { id: "#ORD-7781", date: "Oct 24, 11:15", customer: "Global Tech Solutions", items: 8, status: "shipped", total: "$8,920.50" },
-  { id: "#ORD-7780", date: "Oct 23, 16:45", customer: "Apex Manufacturing", items: 3, status: "delivered", total: "$45,100.00" },
-  { id: "#ORD-7779", date: "Oct 23, 09:20", customer: "Stark Industries", items: 5, status: "processing", total: "$3,200.00" },
-  { id: "#ORD-7778", date: "Oct 22, 18:00", customer: "Wayne Enterprises", items: 24, status: "delivered", total: "$112,050.00" },
-  { id: "#ORD-7777", date: "Oct 22, 14:10", customer: "Oscorp Industries", items: 7, status: "shipped", total: "$6,340.00" },
-  { id: "#ORD-7776", date: "Oct 21, 09:45", customer: "LexCorp Supply", items: 15, status: "delivered", total: "$28,750.00" },
-  { id: "#ORD-7775", date: "Oct 20, 16:20", customer: "Umbrella Corp", items: 2, status: "processing", total: "$1,890.00" },
-];
-
-const summaryStats = [
-  { label: "Total Orders", value: "2,847", icon: "receipt_long", trend: "+8.3%" },
-  { label: "Pending Shipments", value: "34", icon: "local_shipping", trend: "-12%" },
-  { label: "Revenue (MTD)", value: "$1.2M", icon: "payments", trend: "+15.4%" },
-];
-
-const tableHeaders = ["Order ID", "Date", "Customer", "Items", "Status", "Total Amount", "Actions"];
+const tableHeaders = ["Order #", "Date", "Customer", "Items", "Status", "Total Amount", "Actions"];
 
 export default function Orders() {
+  const [data, setData] = useState<OrderDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await ordersApi.getAll();
+      setData(result);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Derived stats from real data
+  const totalOrders = data.length;
+  const processingCount = data.filter((o) => o.status.toLowerCase() === "processing").length;
+  const shippedCount = data.filter((o) => o.status.toLowerCase() === "shipped").length;
+
+  const summaryStats = [
+    { label: "Total Orders", value: loading ? "—" : totalOrders.toLocaleString(), icon: "receipt_long" },
+    { label: "Processing", value: loading ? "—" : processingCount.toLocaleString(), icon: "pending_actions" },
+    { label: "Shipped", value: loading ? "—" : shippedCount.toLocaleString(), icon: "local_shipping" },
+  ];
 
   return (
     <>
@@ -51,15 +63,28 @@ export default function Orders() {
               Orders
             </h2>
             <p className="text-base text-on-surface-variant">
-              Track, manage, and fulfill customer orders across your supply chain.
+              {loading
+                ? "Loading..."
+                : `${totalOrders.toLocaleString()} orders · ${processingCount} processing`}
             </p>
           </div>
           <div className="flex gap-sm">
-            <button className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[18px]">filter_list</span>
-              Filter
-            </button>
-            <button className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs">
+            <button
+              onClick={() => {
+                const csv = [
+                  "Order Number,Date,Customer,Items,Status,Total",
+                  ...data.map((o) => `${o.orderNumber},"${o.date}","${o.customer}",${o.items},${o.status},"${o.total}"`),
+                ].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "orders_export.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs"
+            >
               <span className="material-symbols-outlined text-[18px]">download</span>
               Export
             </button>
@@ -73,16 +98,16 @@ export default function Orders() {
           </div>
         </div>
 
-        {/* ── Info Banner ── */}
-        <div className="mb-lg p-md bg-primary/5 border border-primary/20 rounded-xl text-sm text-on-surface-variant flex items-start gap-sm">
-          <span className="material-symbols-outlined text-primary text-[20px] mt-0.5">info</span>
-          <div>
-            <p className="font-medium text-on-surface">Backend Integration Note</p>
-            <p className="mt-1">
-              The orders table below uses mock data. The backend currently supports <code className="bg-surface-container px-1 rounded text-xs">POST /api/orders</code> (create order) but does not yet have a <code className="bg-surface-container px-1 rounded text-xs">GET /api/orders</code> endpoint to list orders. Click <strong>"New Order"</strong> above to place an order via the live API.
-            </p>
+        {/* ── Error State ── */}
+        {error && (
+          <div className="mb-lg p-md bg-error-container/10 border border-error/30 rounded-xl text-sm text-error flex items-center gap-sm">
+            <span className="material-symbols-outlined">error</span>
+            {error}
+            <button onClick={fetchOrders} className="ml-auto text-xs font-semibold underline">
+              Retry
+            </button>
           </div>
-        </div>
+        )}
 
         {/* ── Summary Stats ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-lg">
@@ -100,10 +125,6 @@ export default function Orders() {
                 <p className="text-sm text-on-surface-variant font-medium">{stat.label}</p>
                 <p className="text-2xl font-bold text-on-surface tracking-tight">{stat.value}</p>
               </div>
-              <span className="text-[11px] font-medium text-primary flex items-center gap-0.5">
-                <span className="material-symbols-outlined text-[16px]">trending_up</span>
-                {stat.trend}
-              </span>
             </div>
           ))}
         </div>
@@ -112,16 +133,8 @@ export default function Orders() {
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
           <div className="px-md py-sm border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
             <p className="text-xs font-semibold text-on-surface-variant tracking-wider">
-              Showing {ordersData.length} orders (mock data)
+              {loading ? "Loading..." : `Showing ${data.length} orders`}
             </p>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-on-surface-variant">Sort by:</span>
-              <select className="bg-transparent border-none text-on-surface text-base font-semibold py-1 pl-2 pr-6 focus:ring-0 cursor-pointer">
-                <option>Date (Newest First)</option>
-                <option>Total (High to Low)</option>
-                <option>Status</option>
-              </select>
-            </div>
           </div>
 
           <div className="w-full overflow-x-auto">
@@ -141,41 +154,40 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
-                {ordersData.map((order) => (
-                  <tr key={order.id} className="hover:bg-surface-container transition-colors duration-150 group">
-                    <td className="px-md py-sm text-sm font-medium text-primary whitespace-nowrap">{order.id}</td>
-                    <td className="px-md py-sm text-sm text-on-surface-variant whitespace-nowrap">{order.date}</td>
-                    <td className="px-md py-sm text-sm text-on-surface font-medium">{order.customer}</td>
-                    <td className="px-md py-sm text-sm text-on-surface-variant text-center tabular-nums">{order.items}</td>
-                    <td className="px-md py-sm"><StatusBadge variant={order.status} /></td>
-                    <td className="px-md py-sm text-sm text-on-surface text-right font-medium tabular-nums">{order.total}</td>
-                    <td className="px-md py-sm text-right">
-                      <button className="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1">
-                        <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                      </button>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-md py-xl text-center text-sm text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[24px] animate-spin mr-2 align-middle">
+                        progress_activity
+                      </span>
+                      Loading orders from API...
                     </td>
                   </tr>
-                ))}
+                ) : data.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-md py-xl text-center text-sm text-on-surface-variant">
+                      No orders found. Place your first order to get started.
+                    </td>
+                  </tr>
+                ) : (
+                  data.map((order) => (
+                    <tr key={order.id} className="hover:bg-surface-container transition-colors duration-150 group">
+                      <td className="px-md py-sm text-sm font-medium text-primary whitespace-nowrap">{order.orderNumber}</td>
+                      <td className="px-md py-sm text-sm text-on-surface-variant whitespace-nowrap">{order.date}</td>
+                      <td className="px-md py-sm text-sm text-on-surface font-medium">{order.customer}</td>
+                      <td className="px-md py-sm text-sm text-on-surface-variant text-center tabular-nums">{order.items}</td>
+                      <td className="px-md py-sm"><StatusBadge variant={statusVariant(order.status)} /></td>
+                      <td className="px-md py-sm text-sm text-on-surface text-right font-medium tabular-nums">{order.total}</td>
+                      <td className="px-md py-sm text-right">
+                        <button className="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1">
+                          <span className="material-symbols-outlined text-[20px]">more_vert</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          </div>
-
-          <div className="px-md py-sm border-t border-outline-variant bg-surface-container-low flex justify-between items-center">
-            <button className="text-on-surface-variant hover:text-primary text-xs font-semibold transition-colors disabled:opacity-50" disabled>Previous</button>
-            <div className="flex gap-1">
-              {[1, 2, 3].map((page) => (
-                <button
-                  key={page}
-                  className={`w-8 h-8 rounded text-xs font-semibold flex items-center justify-center transition-colors ${
-                    page === 1 ? "bg-surface-container-highest text-on-surface" : "hover:bg-surface-container-high text-on-surface-variant"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <span className="w-8 h-8 flex items-center justify-center text-on-surface-variant">...</span>
-            </div>
-            <button className="text-on-surface hover:text-primary text-xs font-semibold transition-colors">Next</button>
           </div>
         </div>
       </main>
@@ -183,9 +195,7 @@ export default function Orders() {
       <CreateOrderModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => {
-          // Would refetch orders if GET endpoint existed
-        }}
+        onCreated={fetchOrders}
       />
     </>
   );

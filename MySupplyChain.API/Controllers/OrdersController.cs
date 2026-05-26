@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Application.Orders.Commands.CreateOrder;
+using MySupplyChain.Application.Orders.Queries.GetOrders;
 
 namespace MySupplyChain.API.Controllers;
 
@@ -10,6 +11,23 @@ namespace MySupplyChain.API.Controllers;
 [Route("api/[controller]")]
 public class OrdersController(IMediator mediator, ILogger<OrdersController> logger) : ControllerBase
 {
+    /// <summary>
+    /// Get all orders
+    /// </summary>
+    /// <remarks>
+    /// Retrieves all orders with customer, item count, status, and total.
+    /// </remarks>
+    /// <returns>A list of all orders.</returns>
+    /// <response code="200">Orders retrieved successfully</response>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<OrderDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll()
+    {
+        logger.LogInformation("GetAllOrders called");
+        var result = await mediator.Send(new GetOrdersQuery());
+        return Ok(result);
+    }
+
     /// <summary>
     /// Place a new order
     /// </summary>
