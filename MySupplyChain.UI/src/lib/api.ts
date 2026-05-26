@@ -86,8 +86,13 @@ export const auth = {
       body: JSON.stringify(data),
     }),
 
-  wipeData: () =>
-    request<void>("/auth/wipe", {
+  resetLedger: () =>
+    request<void>("/auth/reset-ledger", {
+      method: "DELETE",
+    }),
+
+  deleteAccount: () =>
+    request<void>("/auth/account", {
       method: "DELETE",
     }),
 };

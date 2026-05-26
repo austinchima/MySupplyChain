@@ -12,19 +12,32 @@ export default function AccountSettingsModal({
   open,
   onClose,
 }: AccountSettingsModalProps) {
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [isWiping, setIsWiping] = useState(false);
+  const [resetLedgerOpen, setResetLedgerOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleDeleteData = async () => {
-    setIsWiping(true);
+  const handleResetLedger = async () => {
+    setIsProcessing(true);
     try {
-      await auth.wipeData();
+      await auth.resetLedger();
+      window.location.reload();
+    } catch (err) {
+      alert("Failed to reset ledger.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsProcessing(true);
+    try {
+      await auth.deleteAccount();
       localStorage.removeItem("supplychain_jwt");
       window.location.reload();
     } catch (err) {
-      alert("Failed to wipe data. System remains intact.");
+      alert("Failed to delete account.");
     } finally {
-      setIsWiping(false);
+      setIsProcessing(false);
     }
   };
 
@@ -78,17 +91,34 @@ export default function AccountSettingsModal({
             <h4 className="text-[10px] font-black text-error uppercase tracking-widest pl-1">
               Data Security / Danger Zone
             </h4>
-            <div className="bg-error-container/5 rounded-2xl border border-error/20 p-md flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-on-surface">Purge Account & Ledger</p>
-                <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">Permanently destroy all products, history, and active orders.</p>
+            <div className="space-y-sm">
+              {/* Reset Ledger */}
+              <div className="bg-surface-container-highest/10 rounded-2xl border border-outline-variant/20 p-md flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-on-surface">Reset Business Ledger</p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">Wipe all products and orders, but keep your login credentials.</p>
+                </div>
+                <button 
+                  onClick={() => setResetLedgerOpen(true)}
+                  className="bg-primary/10 hover:bg-primary text-primary hover:text-on-primary px-md py-sm rounded-xl text-xs font-black transition-all border border-primary/20 cursor-pointer shadow-sm shadow-primary/10"
+                >
+                  Reset Data
+                </button>
               </div>
-              <button 
-                onClick={() => setDeleteOpen(true)}
-                className="bg-error/10 hover:bg-error text-error hover:text-on-error px-md py-sm rounded-xl text-xs font-black transition-all border border-error/20 cursor-pointer shadow-sm shadow-error/10"
-              >
-                Wipe All Data
-              </button>
+
+              {/* Delete Account */}
+              <div className="bg-error-container/5 rounded-2xl border border-error/20 p-md flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-on-surface">Delete Account Permanently</p>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">Destroy your entire profile, credentials, and all enterprise data.</p>
+                </div>
+                <button 
+                  onClick={() => setDeleteAccountOpen(true)}
+                  className="bg-error/10 hover:bg-error text-error hover:text-on-error px-md py-sm rounded-xl text-xs font-black transition-all border border-error/20 cursor-pointer shadow-sm shadow-error/10"
+                >
+                  Close Account
+                </button>
+              </div>
             </div>
           </div>
 
@@ -103,14 +133,27 @@ export default function AccountSettingsModal({
         </div>
       </Modal>
 
+      {/* Reset Ledger Confirmation */}
       <ConfirmationModal
-        open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        onConfirm={handleDeleteData}
-        title="Wipe Enterprise Cloud?"
-        message="This action is absolute and irreversible. Your entire supply chain ledger, product catalog, and predictive models will be purged from the secure cloud."
-        confirmText={isWiping ? "Purging..." : "Yes, Purge Everything"}
-        requireWord="PURGE"
+        open={resetLedgerOpen}
+        onClose={() => setResetLedgerOpen(false)}
+        onConfirm={handleResetLedger}
+        title="Reset Business Ledger?"
+        message="This will clear your product catalog, sales history, and orders. Your account profile will remain intact for a fresh start."
+        confirmText={isProcessing ? "Resetting..." : "Confirm Reset"}
+        requireWord="RESET"
+        isDanger={true}
+      />
+
+      {/* Delete Account Confirmation */}
+      <ConfirmationModal
+        open={deleteAccountOpen}
+        onClose={() => setDeleteAccountOpen(false)}
+        onConfirm={handleDeleteAccount}
+        title="Delete Profile & Data?"
+        message="This action is final. Your account credentials and all supply chain telemetry will be permanently purged from our servers."
+        confirmText={isProcessing ? "Deleting..." : "Delete Account"}
+        requireWord="DELETE"
         isDanger={true}
       />
     </>

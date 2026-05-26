@@ -21,6 +21,11 @@ public interface IAuthService
     /// </summary>
     Task<string?> LoginAsync(string usernameOrEmail, string password);
 
+    /// <summary>
+    /// Used by DeleteAccountCommandHandler
+    /// </summary>
+    Task DeleteAccountAsync(string userId);
+
     string GenerateJwtToken(User user);
 }
 

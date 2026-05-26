@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MySupplyChain.Application.Auth.Commands.DeleteAccount;
 using MySupplyChain.Application.Auth.Commands.Register;
 using MySupplyChain.Application.Auth.Commands.WipeUserData;
 using MySupplyChain.Application.Auth.Queries.Login;
@@ -54,14 +56,29 @@ public class AuthController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    /// Wipe all user data (Demo/Prototype only)
+    /// Reset all business ledger data (keeps profile)
     /// </summary>
     [Authorize]
-    [HttpDelete("wipe")]
+    [HttpDelete("reset-ledger")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> WipeData()
+    public async Task<IActionResult> ResetLedger()
     {
         await mediator.Send(new WipeUserDataCommand());
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Permanently delete account and all data
+    /// </summary>
+    [Authorize]
+    [HttpDelete("account")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteAccount()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        await mediator.Send(new DeleteAccountCommand(userId));
         return NoContent();
     }
 }

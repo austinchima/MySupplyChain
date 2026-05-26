@@ -76,6 +76,15 @@ public class AuthService(
         return GenerateJwtToken(user);
     }
 
+    public async Task DeleteAccountAsync(string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        if (user != null)
+        {
+            await userManager.DeleteAsync(user);
+        }
+    }
+
     public string GenerateJwtToken(User user)
     {
         var claims = new[]
