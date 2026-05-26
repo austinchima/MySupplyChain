@@ -4,7 +4,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A production-grade supply chain management system engineered as a **portfolio showcase**. This project demonstrates enterprise software engineering principles using **ASP.NET Core 10**, **Clean Architecture**, **CQRS + MediatR**, **React 19**, and **ML.NET SSA time series forecasting**.
+A production-grade supply chain management system engineered as a **portfolio showcase**. This project demonstrates enterprise software engineering principles using **ASP.NET Core 10**, **Clean Architecture**, **CQRS + MediatR**, **React 19**, **PostgreSQL**, **Adminer**, and **ML.NET SSA time series forecasting**.
 
 *Note: This is an engineering case study and portfolio piece, not a commercial SaaS product.*
 
@@ -18,7 +18,8 @@ MySupplyChain/
 ├── MySupplyChain.Infrastructure  # EF Core, ML.NET, JWT auth (implements Application interfaces)
 ├── MySupplyChain.API             # Controllers, middleware, Swagger (composition root)
 ├── MySupplyChain.ModelTrainer    # Offline SSA model training console app
-└── MySupplyChain.Tests           # Unit + integration tests (23 passing)
+├── MySupplyChain.Tests           # Unit + integration tests (23 passing)
+└── graphify-out/                 # Standard AST knowledge graph metadata and visualization
 ```
 
 ### Key Design Decisions
@@ -29,11 +30,15 @@ MySupplyChain/
 | **CQRS + MediatR** | Separates read/write paths, enables pipeline behaviors (validation, logging) |
 | **SSA Forecasting** | Singular Spectrum Analysis captures seasonality + trend without feature engineering |
 | **Modern UI/UX** | React frontend with custom Tailwind CSS utilizing dynamic micro-animations and a glassmorphic aesthetic |
-| **JWT Auth** | Stateless authentication suitable for containerized horizontal scaling |
+| **JWT Auth** | Production-grade JWT + ASP.NET Identity with password requirements and automated profile synchronization |
+| **PostgreSQL Database** | Migrated from SQL Server for modern, open-source performance, native JSON support, and zero-cost cloud production container compatibility |
 
-## Interactive Sandbox
+## Authentication System
 
-The application includes a fully connected sandbox frontend. Visitors can explore the forecasting UI and live data ingestion pipelines without requiring manual registration or setup.
+The application utilizes a production-grade authentication flow. Demo or bypass guest access has been fully disabled to ensure top-tier security standards end-to-end. 
+
+* **Sign Up / Sign In:** Beautiful, interactive forms featuring micro-animations, input validation, and password strength checks.
+* **JWT Storage:** Tokens are securely stored, managed, and attached to all API queries.
 
 ## ML.NET Demand Forecasting
 
@@ -45,6 +50,16 @@ The forecasting engine uses **Singular Spectrum Analysis (SSA)** via `Microsoft.
 - Model accuracy metrics (RMSE, MAE)
 - Automatic fallback to moving average when model is unavailable
 - Per-product SSA models for maximum accuracy
+
+## Graphify Knowledge Graph
+
+The repository includes a pre-indexed **Graphify knowledge graph** under `graphify-out/`.
+* Read [GRAPH_REPORT.md](file:///e:/Personal%20Projects/MySupplyChain/graphify-out/GRAPH_REPORT.md) to inspect the structural architecture, God Nodes, and codebase community modules.
+* Access the interactive interactive visualizer by opening `graphify-out/graph.html` in your web browser.
+* You can update the graph schema recursively at any time:
+  ```bash
+  uv run graphify update . --force
+  ```
 
 ## Quick Start
 
@@ -60,7 +75,11 @@ The forecasting engine uses **Singular Spectrum Analysis (SSA)** via `Microsoft.
 docker compose up --build
 ```
 
-The API will be available at `http://localhost:5000/swagger`. The frontend UI runs concurrently.
+The stack automatically boots:
+- **ASP.NET Core API** at `http://localhost:5000/swagger`
+- **React Frontend UI** concurrently
+- **PostgreSQL Database**
+- **Adminer Database Web Client** at `http://localhost:8080` (allows you to view and run custom SQL queries on your tables out-of-the-box)
 
 ### Option 2: Local Development
 
@@ -69,7 +88,7 @@ The API will be available at `http://localhost:5000/swagger`. The frontend UI ru
 cd MySupplyChain.API
 dotnet run
 
-# 2. Run the React Frontend Sandbox
+# 2. Run the React Frontend
 cd ../MySupplyChain.UI
 npm install
 npm run dev
@@ -94,7 +113,7 @@ The trainer groups rows by `item`, trains a separate SSA model per product, and 
 | Frontend | React 19, Vite, Tailwind CSS, Lucide React |
 | Runtime | .NET 10 / ASP.NET Core 10 |
 | ORM | Entity Framework Core 10 |
-| Database | SQL Server 2022 / PostgreSQL |
+| Database | PostgreSQL 16 / Adminer |
 | Auth | JWT Bearer + ASP.NET Core Identity |
 | ML | ML.NET 5.0 (SSA Time Series) |
 | CQRS | MediatR 14 |
@@ -104,3 +123,4 @@ The trainer groups rows by `item`, trains a separate SSA model per product, and 
 ## License
 
 [MIT](LICENSE)
+
