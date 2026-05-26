@@ -16,6 +16,14 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
   const [skuColumn, setSkuColumn] = useState<string>("");
   const [dateColumn, setDateColumn] = useState<string>("");
   const [quantityColumn, setQuantityColumn] = useState<string>("");
+
+  // New advanced mappings
+  const [productNameColumn, setProductNameColumn] = useState<string>("");
+  const [productPriceColumn, setProductPriceColumn] = useState<string>("");
+  const [customerEmailColumn, setCustomerEmailColumn] = useState<string>("");
+  const [customerNameColumn, setCustomerNameColumn] = useState<string>("");
+  const [orderIdColumn, setOrderIdColumn] = useState<string>("");
+
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +86,12 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
       setSkuColumn(findBestMatch(parsedHeaders, ["sku", "product", "item", "code", "id"]));
       setDateColumn(findBestMatch(parsedHeaders, ["date", "time", "created", "timestamp", "day"]));
       setQuantityColumn(findBestMatch(parsedHeaders, ["qty", "quantity", "sold", "count", "shipped"]));
+
+      setProductNameColumn(findBestMatch(parsedHeaders, ["name", "title", "description"]));
+      setProductPriceColumn(findBestMatch(parsedHeaders, ["price", "cost", "value", "msrp", "rate"]));
+      setCustomerEmailColumn(findBestMatch(parsedHeaders, ["email", "contact", "user"]));
+      setCustomerNameColumn(findBestMatch(parsedHeaders, ["customer", "client", "buyer", "full name"]));
+      setOrderIdColumn(findBestMatch(parsedHeaders, ["order", "transaction", "invoice", "ref"]));
     };
     reader.readAsText(selectedFile);
   };
@@ -104,13 +118,18 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
     setSkuColumn("");
     setDateColumn("");
     setQuantityColumn("");
+    setProductNameColumn("");
+    setProductPriceColumn("");
+    setCustomerEmailColumn("");
+    setCustomerNameColumn("");
+    setOrderIdColumn("");
     setError(null);
     setImporting(false);
   };
 
   const handleImportSubmit = async () => {
     if (!file || !skuColumn || !dateColumn || !quantityColumn) {
-      setError("Please map all required columns before importing.");
+      setError("Please map the required SKU, Date, and Quantity columns before importing.");
       return;
     }
 
@@ -122,6 +141,12 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
     formData.append("SkuColumn", skuColumn);
     formData.append("DateColumn", dateColumn);
     formData.append("QuantityColumn", quantityColumn);
+
+    if (productNameColumn) formData.append("ProductNameColumn", productNameColumn);
+    if (productPriceColumn) formData.append("ProductPriceColumn", productPriceColumn);
+    if (customerEmailColumn) formData.append("CustomerEmailColumn", customerEmailColumn);
+    if (customerNameColumn) formData.append("CustomerNameColumn", customerNameColumn);
+    if (orderIdColumn) formData.append("OrderIdColumn", orderIdColumn);
 
     try {
       const summary = await salesHistories.import(formData);
@@ -254,6 +279,101 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
                   </select>
                 </div>
               </div>
+
+              {/* Advanced Mapping Section */}
+              <div className="pt-4 space-y-md">
+                <h5 className="text-[10px] font-bold text-outline uppercase tracking-wider flex items-center gap-2">
+                  Advanced Mappings (Optional)
+                  <div className="h-px flex-1 bg-outline-variant/30"></div>
+                </h5>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+                  {/* Product Name */}
+                  <div className="space-y-sm">
+                    <label className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
+                      Product Name
+                    </label>
+                    <select
+                      value={productNameColumn}
+                      onChange={(e) => setProductNameColumn(e.target.value)}
+                      className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-lg p-2 text-[11px] outline-none"
+                    >
+                      <option value="">— Skip (Use SKU) —</option>
+                      {headers.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Product Price */}
+                  <div className="space-y-sm">
+                    <label className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
+                      Unit Price
+                    </label>
+                    <select
+                      value={productPriceColumn}
+                      onChange={(e) => setProductPriceColumn(e.target.value)}
+                      className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-lg p-2 text-[11px] outline-none"
+                    >
+                      <option value="">— Skip (Use 0) —</option>
+                      {headers.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Order ID */}
+                  <div className="space-y-sm">
+                    <label className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
+                      Order / Invoice ID
+                    </label>
+                    <select
+                      value={orderIdColumn}
+                      onChange={(e) => setOrderIdColumn(e.target.value)}
+                      className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-lg p-2 text-[11px] outline-none"
+                    >
+                      <option value="">— Skip (No Grouping) —</option>
+                      {headers.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Customer Email */}
+                  <div className="space-y-sm">
+                    <label className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
+                      Customer Email
+                    </label>
+                    <select
+                      value={customerEmailColumn}
+                      onChange={(e) => setCustomerEmailColumn(e.target.value)}
+                      className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-lg p-2 text-[11px] outline-none"
+                    >
+                      <option value="">— Skip (Anonymous) —</option>
+                      {headers.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Customer Name */}
+                  <div className="space-y-sm">
+                    <label className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
+                      Customer Name
+                    </label>
+                    <select
+                      value={customerNameColumn}
+                      onChange={(e) => setCustomerNameColumn(e.target.value)}
+                      className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-lg p-2 text-[11px] outline-none"
+                    >
+                      <option value="">— Skip —</option>
+                      {headers.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* In-Context Mapped Preview Grid */}
@@ -264,22 +384,32 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
                   <thead>
                     <tr className="bg-surface-container-high/60 text-on-surface-variant border-b border-outline-variant/30 font-semibold">
                       <th className="p-3">Row</th>
-                      <th className="p-3 text-primary">SKU ({skuColumn})</th>
-                      <th className="p-3 text-secondary">Date ({dateColumn})</th>
-                      <th className="p-3 text-tertiary">Qty ({quantityColumn})</th>
+                      <th className="p-3 text-primary">SKU</th>
+                      <th className="p-3 text-on-surface">Product Name</th>
+                      <th className="p-3 text-on-surface text-right">Price</th>
+                      <th className="p-3 text-secondary">Date</th>
+                      <th className="p-3 text-tertiary">Qty</th>
+                      <th className="p-3 text-outline">Order ID</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rowsPreview.map((row, index) => {
                       const skuIndex = headers.indexOf(skuColumn);
+                      const nameIndex = headers.indexOf(productNameColumn);
+                      const priceIndex = headers.indexOf(productPriceColumn);
                       const dateIndex = headers.indexOf(dateColumn);
                       const qtyIndex = headers.indexOf(quantityColumn);
+                      const orderIndex = headers.indexOf(orderIdColumn);
+
                       return (
                         <tr key={index} className="border-b border-outline-variant/20 hover:bg-surface-container-high/20 transition-colors">
                           <td className="p-3 text-outline">#{index + 1}</td>
                           <td className="p-3 font-semibold text-on-surface font-mono">{skuIndex >= 0 ? row[skuIndex] : "—"}</td>
+                          <td className="p-3 text-on-surface-variant truncate max-w-[120px]">{nameIndex >= 0 ? row[nameIndex] : "—"}</td>
+                          <td className="p-3 text-on-surface text-right">{priceIndex >= 0 ? `$${row[priceIndex]}` : "—"}</td>
                           <td className="p-3 text-on-surface-variant">{dateIndex >= 0 ? row[dateIndex] : "—"}</td>
                           <td className="p-3 font-semibold text-on-surface">{qtyIndex >= 0 ? row[qtyIndex] : "—"}</td>
+                          <td className="p-3 text-outline truncate max-w-[80px]">{orderIndex >= 0 ? row[orderIndex] : "—"}</td>
                         </tr>
                       );
                     })}

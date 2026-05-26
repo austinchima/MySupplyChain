@@ -11,6 +11,12 @@ public class ImportCsvRequest
     public string SkuColumn { get; set; } = string.Empty;
     public string DateColumn { get; set; } = string.Empty;
     public string QuantityColumn { get; set; } = string.Empty;
+
+    public string? ProductNameColumn { get; set; }
+    public string? ProductPriceColumn { get; set; }
+    public string? CustomerNameColumn { get; set; }
+    public string? CustomerEmailColumn { get; set; }
+    public string? OrderIdColumn { get; set; }
 }
 
 [ApiController]
@@ -38,7 +44,12 @@ public class SalesHistoriesController(IMediator mediator, ILogger<SalesHistories
             FileContent = memoryStream.ToArray(),
             SkuColumn = request.SkuColumn,
             DateColumn = request.DateColumn,
-            QuantityColumn = request.QuantityColumn
+            QuantityColumn = request.QuantityColumn,
+            ProductNameColumn = request.ProductNameColumn,
+            ProductPriceColumn = request.ProductPriceColumn,
+            CustomerNameColumn = request.CustomerNameColumn,
+            CustomerEmailColumn = request.CustomerEmailColumn,
+            OrderIdColumn = request.OrderIdColumn
         };
 
         var summary = await mediator.Send(command);
