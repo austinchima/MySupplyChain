@@ -95,9 +95,9 @@ export default function Orders() {
 
       <main className="flex-1 overflow-y-auto p-margin-desktop font-['Outfit']">
         {/* ── Page Header ── */}
-        <div className="flex justify-between items-end mb-lg">
-          <div>
-            <h2 className="text-[32px] leading-10 font-bold text-on-surface tracking-tight mb-1">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-md mb-lg">
+          <div className="min-w-0">
+            <h2 className="text-[32px] leading-10 font-bold text-on-surface tracking-tight mb-1 truncate">
               Order Ledger
             </h2>
             <p className="text-base text-on-surface-variant">
@@ -106,7 +106,7 @@ export default function Orders() {
                 : `${totalOrders.toLocaleString()} total entries · ${processingCount} active fulfillments`}
             </p>
           </div>
-          <div className="flex gap-sm">
+          <div className="flex flex-wrap gap-sm">
             <div className="relative group">
               <button className="px-md py-sm border border-outline-variant rounded-xl text-sm font-bold text-on-surface hover:bg-surface-container-high transition-all flex items-center gap-xs cursor-pointer shadow-sm">
                 <span className="material-symbols-outlined text-[20px]">filter_list</span>
@@ -147,7 +147,7 @@ export default function Orders() {
             </button>
             <button
               onClick={() => setCreateOpen(true)}
-              className="px-md py-sm bg-primary text-on-primary rounded-xl text-sm font-bold hover:opacity-90 transition-all flex items-center gap-xs shadow-lg shadow-primary/20 cursor-pointer"
+              className="px-md py-sm bg-primary text-on-primary rounded-xl text-sm font-bold hover:opacity-90 transition-all flex items-center gap-xs shadow-lg shadow-primary/20 cursor-pointer whitespace-nowrap"
             >
               <span className="material-symbols-outlined text-[20px]">add</span>
               New Order
@@ -202,7 +202,12 @@ export default function Orders() {
                     <th
                       key={header}
                       className={`px-md py-4 text-[10px] font-black text-outline uppercase tracking-widest whitespace-nowrap border-b border-outline-variant/20 ${
-                        i === 3 ? "text-center" : i === 5 ? "text-right" : ""
+                        i === 0 ? "min-w-[120px]" : 
+                        i === 1 ? "min-w-[140px]" :
+                        i === 2 ? "min-w-[200px]" :
+                        i === 3 ? "text-center min-w-[100px]" : 
+                        i === 4 ? "min-w-[120px]" :
+                        i === 5 ? "text-right min-w-[120px]" : ""
                       }`}
                     >
                       {header}
@@ -235,7 +240,7 @@ export default function Orders() {
                     <tr key={order.id} className="hover:bg-primary/5 transition-all duration-150 group cursor-default">
                       <td className="px-md py-4 text-xs font-bold text-primary font-mono whitespace-nowrap">{order.orderNumber}</td>
                       <td className="px-md py-4 text-xs text-on-surface-variant whitespace-nowrap font-mono">{order.date}</td>
-                      <td className="px-md py-4 text-sm font-bold text-on-surface">{order.customer}</td>
+                      <td className="px-md py-4 text-sm font-bold text-on-surface min-w-[200px]">{order.customer}</td>
                       <td className="px-md py-4 text-xs text-on-surface-variant text-center font-mono font-bold">{order.items}</td>
                       <td className="px-md py-4"><StatusBadge variant={statusVariant(order.status)} /></td>
                       <td className="px-md py-4 text-xs text-on-surface text-right font-bold font-mono tabular-nums">{order.total}</td>
