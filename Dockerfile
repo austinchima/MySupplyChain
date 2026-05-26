@@ -16,7 +16,9 @@ RUN dotnet restore MySupplyChain.slnx
 
 # Copy everything else and build
 COPY . .
+RUN mkdir -p MySupplyChain.Infrastructure/MLModels data
 RUN dotnet publish MySupplyChain.API/MySupplyChain.API.csproj -c Release -o /app/publish --no-restore
+
 
 # ─── Runtime ──────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
