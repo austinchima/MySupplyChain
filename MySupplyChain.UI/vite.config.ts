@@ -12,7 +12,7 @@ export default defineConfig({
     proxy: {
       // Forward /api requests to the .NET backend
       '/api': {
-        target: 'http://localhost:5133',
+        target: 'http://localhost:5001',
         changeOrigin: true,
         secure: false,
       },
