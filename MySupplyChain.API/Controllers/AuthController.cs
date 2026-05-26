@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Application.Auth.Commands.Register;
+using MySupplyChain.Application.Auth.Commands.WipeUserData;
 using MySupplyChain.Application.Auth.Queries.Login;
 
 namespace MySupplyChain.API.Controllers;
@@ -50,5 +51,17 @@ public class AuthController(IMediator mediator) : ControllerBase
     {
         var token = await mediator.Send(query);
         return Ok(new { Token = token, Message = "Login successful" });
+    }
+
+    /// <summary>
+    /// Wipe all user data (Demo/Prototype only)
+    /// </summary>
+    [Authorize]
+    [HttpDelete("wipe")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> WipeData()
+    {
+        await mediator.Send(new WipeUserDataCommand());
+        return NoContent();
     }
 }

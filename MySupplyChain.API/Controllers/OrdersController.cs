@@ -48,4 +48,27 @@ public class OrdersController(IMediator mediator, ILogger<OrdersController> logg
         var remainingStock = await mediator.Send(command);
         return Ok(new { RemainingStock = remainingStock, Message = "Order placed successfully" });
     }
+
+    /// <summary>
+    /// Update an order status
+    /// </summary>
+    [HttpPatch("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderCommand command)
+    {
+        if (id != command.Id) return BadRequest("ID mismatch");
+        await mediator.Send(command);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Delete an order
+    /// </summary>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteOrder(int id)
+    {
+        await mediator.Send(new DeleteOrderCommand(id));
+        return NoContent();
+    }
 }

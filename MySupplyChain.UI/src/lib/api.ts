@@ -85,6 +85,11 @@ export const auth = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  wipeData: () =>
+    request<void>("/auth/wipe", {
+      method: "DELETE",
+    }),
 };
 
 // ─── Products ──────────────────────────────────────────────────────────────
@@ -98,6 +103,19 @@ export const products = {
     request<number>("/products", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  /** PATCH /api/products/{id} */
+  update: (id: number, data: Partial<CreateProductRequest> & { id: number }) =>
+    request<void>(`/products/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  /** DELETE /api/products/{id} */
+  delete: (id: number) =>
+    request<void>(`/products/${id}`, {
+      method: "DELETE",
     }),
 
   /** GET /api/products/{id}/forecast?daysToForecast=N → ProductForecastDto */
@@ -125,6 +143,19 @@ export const orders = {
     request<OrderResponse>("/orders", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  /** PATCH /api/orders/{id} */
+  updateStatus: (id: number, data: { id: number, status: number }) =>
+    request<void>(`/orders/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  /** DELETE /api/orders/{id} */
+  delete: (id: number) =>
+    request<void>(`/orders/${id}`, {
+      method: "DELETE",
     }),
 };
 

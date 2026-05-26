@@ -106,4 +106,28 @@ public class ProductsController(IMediator mediator, ILogger<ProductsController> 
         var result = await mediator.Send(new GetAllProductsQuery());
         return Ok(result);
     }
+
+    /// <summary>
+    /// Update a product (e.g. adjust reorder point)
+    /// </summary>
+    [HttpPatch("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductCommand command)
+    {
+        if (id != command.Id) return BadRequest("ID mismatch");
+        await mediator.Send(command);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Delete a product
+    /// </summary>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteProduct(int id)
+    {
+        await mediator.Send(new DeleteProductCommand(id));
+        return NoContent();
+    }
 }
