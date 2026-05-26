@@ -17,11 +17,16 @@ import type {
 
 // In production (Vercel), VITE_API_BASE_URL or VITE_API_URL is set to the Render backend URL
 const getBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL;
+  let envUrl = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL;
   if (!envUrl) return "/api";
+  
+  // Clean up any Swagger suffixes copied directly from browsers
+  envUrl = envUrl.replace(/\/swagger(\/index\.html)?\/?$/i, "");
+  
   return envUrl.endsWith("/api") ? envUrl : `${envUrl.replace(/\/$/, "")}/api`;
 };
 const BASE = getBaseUrl();
+
 
 
 // ─── Generic fetch wrapper with JWT injection ──────────────────────────────
