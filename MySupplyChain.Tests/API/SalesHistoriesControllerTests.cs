@@ -54,7 +54,7 @@ public class SalesHistoriesControllerTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task ImportCsv_WithMissingHeaders_ShouldReturnOkWithZeroImports()
+    public async Task ImportCsv_WithMissingHeaders_ShouldReturnBadRequest()
     {
         // Arrange
         var client = await GetAuthenticatedClientAsync("csv_user2");
@@ -76,11 +76,9 @@ public class SalesHistoriesControllerTests : BaseIntegrationTest
         var response = await client.PostAsync("/api/saleshistories/import", form);
 
         // Assert
-        // CsvHelper is configured with MissingFieldFound = null, so it ignores missing columns
-        // and skips parsing the data, resulting in 0 records imported.
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var summary = await response.Content.ReadFromJsonAsync<ImportSummaryDto>();
-        summary.Should().NotBeNull();
-        summary!.RecordsImported.Should().Be(0);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("One or more validation errors occurred.");
+        content.Should().Contain("MissingSkuCol");
     }
 }

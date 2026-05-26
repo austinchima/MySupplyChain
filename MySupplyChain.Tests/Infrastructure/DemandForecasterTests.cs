@@ -18,11 +18,12 @@ public class DemandForecasterTests
         // Act
         var result = await forecaster.PredictDemandAsync(1, "SKU-001", historicalSales);
 
-        // Assert — fallback should produce a 30-day forecast filled with the average
+        // Assert — fallback should produce a 30-day forecast based on linear regression trend (slope=10, intercept=10) starting at x=3 (value=40)
         result.Should().NotBeNull();
         result.ForecastedUnits.Should().HaveCount(30);
-        result.ForecastedUnits.Should().AllSatisfy(v => v.Should().Be(20f));
-        result.Rmse.Should().BeGreaterThan(0);
+        result.ForecastedUnits[0].Should().Be(40f);
+        result.ForecastedUnits[29].Should().Be(330f);
+        result.Rmse.Should().Be(0);
     }
 
     [Fact]

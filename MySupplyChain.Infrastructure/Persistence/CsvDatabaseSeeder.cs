@@ -45,7 +45,7 @@ public static class CsvDatabaseSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, string csvFilePath, ILogger logger)
     {
-        if (await context.Orders.AnyAsync())
+        if (await context.Orders.AnyAsync() || await context.Products.AnyAsync() || await context.SalesHistories.AnyAsync())
         {
             logger.LogInformation("Database already seeded. Skipping CSV seed.");
             return;

@@ -2,6 +2,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using MySupplyChain.Application.Common.Exceptions;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Domain.Entities;
 using System.Globalization;
@@ -30,12 +31,24 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
         csv.ReadHeader();
         
         if (csv.HeaderRecord == null)
-            throw new Exception("CSV file has no headers.");
+            throw new MySupplyChain.Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]> { { "File", ["CSV file has no headers."] } });
 
         var headers = csv.HeaderRecord.ToList();
         
+        // Validate that requested columns exist
+        var headerErrors = new Dictionary<string, string[]>();
+        if (!headers.Contains(request.SkuColumn))
+            headerErrors.Add("SkuColumn", [$"Column '{request.SkuColumn}' not found in CSV."]);
+        if (!headers.Contains(request.DateColumn))
+            headerErrors.Add("DateColumn", [$"Column '{request.DateColumn}' not found in CSV."]);
+        if (!headers.Contains(request.QuantityColumn))
+            headerErrors.Add("QuantityColumn", [$"Column '{request.QuantityColumn}' not found in CSV."]);
+
+        if (headerErrors.Count > 0)
+            throw new MySupplyChain.Application.Common.Exceptions.ValidationException(headerErrors);
+
         var newSales = new List<SalesHistory>();
-        var newProducts = new List<Product>();
+        var newProductsBatch = new Dictionary<string, Product>();
 
         while (await csv.ReadAsync())
         {
@@ -44,18 +57,20 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
 
             if (!productsCache.TryGetValue(sku, out var product))
             {
-                // Auto-create product
-                product = new Product
+                if (!newProductsBatch.TryGetValue(sku, out product))
                 {
-                    Sku = sku,
-                    Name = $"Imported Product ({sku})",
-                    Price = 0m,
-                    CurrentStock = 0,
-                    ReorderPoint = 10
-                };
-                newProducts.Add(product);
-                productsCache[sku] = product;
-                summary.NewProductsCreated++;
+                    // Auto-create product
+                    product = new Product
+                    {
+                        Sku = sku,
+                        Name = $"Imported Product ({sku})",
+                        Price = 0m,
+                        CurrentStock = 0,
+                        ReorderPoint = 10
+                    };
+                    newProductsBatch[sku] = product;
+                    summary.NewProductsCreated++;
+                }
             }
 
             var dateStr = csv.GetField<string>(request.DateColumn);
@@ -84,8 +99,7 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
 
             newSales.Add(new SalesHistory
             {
-                Product = product, // Uses navigation property to tie to existing or newly created product
-                ProductId = product.Id, // Will be 0 for new products until saved, EF handles this
+                Product = product, // Uses navigation property; EF handles the ID once saved
                 Sku = sku,
                 Date = date,
                 QuantitySold = quantity,
@@ -94,9 +108,9 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
             summary.RecordsImported++;
         }
 
-        if (newProducts.Count > 0)
+        if (newProductsBatch.Count > 0)
         {
-            context.Products.AddRange(newProducts);
+            context.Products.AddRange(newProductsBatch.Values);
         }
         
         if (newSales.Count > 0)
