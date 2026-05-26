@@ -327,18 +327,24 @@ function App() {
     }
     setLoading(true);
     try {
-      const res = await auth.register({
+      await auth.register({
         username: signUpUsername.trim(),
         email: signUpEmail.trim(),
         password: signUpPassword
       });
-      setToken(res.token);
-      setIsAuth(true);
+      // Register does not return a token, so we must log in immediately after
+      await attemptLogin({ usernameOrEmail: signUpUsername.trim(), password: signUpPassword });
     } catch (err: any) {
       console.error("Sign up failed:", err);
       try {
         const errorDetail = JSON.parse(err.message);
-        if (Array.isArray(errorDetail)) {
+        if (errorDetail.errors) {
+          // Flatten ProblemDetails validation errors
+          const messages = Object.values(errorDetail.errors).flat().join(" ");
+          setError(messages);
+        } else if (errorDetail.detail) {
+          setError(errorDetail.detail);
+        } else if (Array.isArray(errorDetail)) {
           setError(errorDetail.map((e: any) => e.description).join(" "));
         } else {
           setError(err.message || "Sign up failed. Please try again.");
