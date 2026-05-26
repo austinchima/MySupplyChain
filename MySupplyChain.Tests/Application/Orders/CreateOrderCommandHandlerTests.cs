@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MySupplyChain.Application.Common.Exceptions;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Application.Orders.Commands.CreateOrder;
 using MySupplyChain.Domain.Entities;
@@ -91,7 +92,8 @@ public class CreateOrderCommandHandlerTests
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<Exception>().WithMessage("Insufficient stock*");
+        var exception = await Assert.ThrowsAsync<ValidationException>(act);
+        Assert.True(exception.Errors.ContainsKey("Quantity"));
     }
 
     [Fact]

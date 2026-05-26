@@ -11,6 +11,8 @@ public interface IApplicationDbContext
     DbSet<Product> Products { get; }
     DbSet<SalesHistory> SalesHistories { get; }
     DbSet<ReorderRequest> ReorderRequests { get; }
+    DbSet<Order> Orders { get; }
+    DbSet<Customer> Customers { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
