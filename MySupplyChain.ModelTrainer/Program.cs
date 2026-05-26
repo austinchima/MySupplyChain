@@ -1,4 +1,5 @@
 using Microsoft.ML;
+using Microsoft.ML.Data;
 using Microsoft.ML.Transforms.TimeSeries;
 using MySupplyChain.Infrastructure.MachineLearning.DataModels;
 
@@ -6,23 +7,18 @@ namespace MySupplyChain.ModelTrainer;
 
 class Program
 {
-    //How much we want to predict (future days)
     private const int DefaultHorizon = 30;
-    
-    //How far back to look to find the pattern
     private const int DefaultWindowSize = 60;
-    
-    //Length of the time series to use for training
+    private const int LgbmWindowSize = 30; // Features for LightGBM
     private const int DefaultSeriesLength = 365;
     private const float ConfidenceLevel = 0.95f;
 
     static void Main(string[] args)
     {
-        Console.WriteLine("🤖 MySupplyChain — SSA Time Series Model Trainer");
-        Console.WriteLine("=================================================\n");
+        Console.WriteLine("🤖 MySupplyChain — ML Model Trainer (SSA vs LightGBM)");
+        Console.WriteLine("=====================================================\n");
 
         var mlContext = new MLContext(seed: 0);
-
         var dataPath = args.FirstOrDefault(a => a.StartsWith("--data="))?.Split('=')[1]
                        ?? Path.Combine(GetSolutionRoot(), "data", "train.csv");
 
@@ -35,18 +31,18 @@ class Program
         }
 
         Console.WriteLine($"📂 Loading data from: {dataPath}");
-
-        // Load CSV: date,store,item,sales
         var rawData = LoadTimeSeriesData(dataPath);
         Console.WriteLine($"✓ Loaded {rawData.Count} daily records across {rawData.Select(r => r.Item).Distinct().Count()} products\n");
 
-        // Train a separate SSA model per product for maximum accuracy
         var products = rawData.Select(r => r.Item).Distinct().OrderBy(x => x).ToList();
+
+        var ssaMetrics = new List<ModelMetrics>();
+        var lgbmMetrics = new List<ModelMetrics>();
 
         foreach (var productId in products)
         {
             Console.WriteLine($"\n{'=',-50}");
-            Console.WriteLine($"📦 Training SSA model for Product {productId}");
+            Console.WriteLine($"📦 Training models for Product {productId}");
             Console.WriteLine($"{'=',-50}");
 
             var productData = rawData
@@ -56,97 +52,133 @@ class Program
                 .Select(g => new SsaModelInput { UnitsSold = g.Sum(r => r.Sales) })
                 .ToList();
 
-            Console.WriteLine($"  • Time series length: {productData.Count} days");
-            Console.WriteLine($"  • Date range: {rawData.Where(r => r.Item == productId).Min(r => r.Date):yyyy-MM-dd} → " +
-                            $"{rawData.Where(r => r.Item == productId).Max(r => r.Date):yyyy-MM-dd}");
-
-            // Split: 80% train, 20% evaluation
             var splitPoint = (int)(productData.Count * 0.8);
             var trainData = productData.Take(splitPoint).ToList();
             var evalData = productData.Skip(splitPoint).ToList();
 
-            Console.WriteLine($"  • Train set: {trainData.Count} days | Eval set: {evalData.Count} days");
+            // 1. Train SSA
+            var ssaModel = TrainSsa(mlContext, trainData);
+            var ssaResult = EvaluateSsa(mlContext, ssaModel, evalData, productId);
+            ssaMetrics.Add(ssaResult);
 
-            var dataView = mlContext.Data.LoadFromEnumerable(trainData);
-
-            var windowSize = Math.Min(DefaultWindowSize, trainData.Count / 4);
-            var seriesLength = Math.Min(DefaultSeriesLength, trainData.Count);
-
-            Console.WriteLine($"  • SSA params: windowSize={windowSize}, seriesLength={seriesLength}, horizon={DefaultHorizon}");
-
-            // Build SSA pipeline
-            var pipeline = mlContext.Forecasting.ForecastBySsa(
-                outputColumnName: nameof(SsaForecastOutput.ForecastedUnits),
-                inputColumnName: nameof(SsaModelInput.UnitsSold),
-                windowSize: windowSize,
-                seriesLength: seriesLength,
-                trainSize: trainData.Count,
-                horizon: DefaultHorizon,
-                confidenceLevel: ConfidenceLevel,
-                confidenceLowerBoundColumn: nameof(SsaForecastOutput.LowerBound),
-                confidenceUpperBoundColumn: nameof(SsaForecastOutput.UpperBound));
-
-            Console.Write("  ⏳ Training...");
-            var model = pipeline.Fit(dataView);
-            Console.WriteLine(" ✅ Done");
-
-            // Evaluate on hold-out set
-            EvaluateModel(mlContext, model, evalData, productId);
-
-            // Save model
-            SaveModel(mlContext, model, dataView, productId);
-
-            // Test predictions
-            TestPredictions(mlContext, model, productId);
+            // 2. Train LightGBM
+            var lgbmModel = TrainLightGbm(mlContext, trainData, LgbmWindowSize);
+            var lgbmResult = EvaluateLightGbm(mlContext, lgbmModel, trainData, evalData, LgbmWindowSize, productId);
+            lgbmMetrics.Add(lgbmResult);
         }
 
-        // Also save a combined "default" model using all products aggregated
-        Console.WriteLine("\n\n📊 Training aggregated default model (all products)...");
-        var allSales = rawData
-            .GroupBy(r => r.Date)
-            .OrderBy(g => g.Key)
-            .Select(g => new SsaModelInput { UnitsSold = g.Sum(x => x.Sales) })
-            .ToList();
+        // Print final report
+        PrintComparisonReport(ssaMetrics, lgbmMetrics);
+    }
 
-        var defaultView = mlContext.Data.LoadFromEnumerable(allSales);
-        var defaultPipeline = mlContext.Forecasting.ForecastBySsa(
+    static ITransformer TrainSsa(MLContext mlContext, List<SsaModelInput> trainData)
+    {
+        var windowSize = Math.Min(DefaultWindowSize, trainData.Count / 4);
+        var seriesLength = Math.Min(DefaultSeriesLength, trainData.Count);
+
+        var dataView = mlContext.Data.LoadFromEnumerable(trainData);
+        var pipeline = mlContext.Forecasting.ForecastBySsa(
             outputColumnName: nameof(SsaForecastOutput.ForecastedUnits),
             inputColumnName: nameof(SsaModelInput.UnitsSold),
-            windowSize: DefaultWindowSize,
-            seriesLength: Math.Min(DefaultSeriesLength, allSales.Count),
-            trainSize: allSales.Count,
+            windowSize: windowSize,
+            seriesLength: seriesLength,
+            trainSize: trainData.Count,
             horizon: DefaultHorizon,
             confidenceLevel: ConfidenceLevel,
             confidenceLowerBoundColumn: nameof(SsaForecastOutput.LowerBound),
             confidenceUpperBoundColumn: nameof(SsaForecastOutput.UpperBound));
 
-        var defaultModel = defaultPipeline.Fit(defaultView);
-
-        var solutionRoot = GetSolutionRoot();
-        var defaultPath = Path.Combine(solutionRoot, "MySupplyChain.Infrastructure", "MLModels", "sales_model.zip");
-        Directory.CreateDirectory(Path.GetDirectoryName(defaultPath)!);
-        mlContext.Model.Save(defaultModel, defaultView.Schema, defaultPath);
-        Console.WriteLine($"  💾 Default model saved: {defaultPath}");
-
-        Console.WriteLine("\n\n✅ All SSA models trained and saved successfully!");
-        Console.WriteLine("   You can now run the API with demand forecasting enabled.\n");
+        Console.Write("  ⏳ Training SSA...");
+        var model = pipeline.Fit(dataView);
+        Console.WriteLine(" ✅ Done");
+        return model;
     }
 
-    static void EvaluateModel(MLContext mlContext, ITransformer model, List<SsaModelInput> evalData, int productId)
+    static ModelMetrics EvaluateSsa(MLContext mlContext, ITransformer model, List<SsaModelInput> evalData, int productId)
     {
         var engine = model.CreateTimeSeriesEngine<SsaModelInput, SsaForecastOutput>(mlContext);
         var prediction = engine.Predict();
 
         var horizon = Math.Min(prediction.ForecastedUnits.Length, evalData.Count);
-        if (horizon == 0)
+        if (horizon == 0) return new ModelMetrics();
+
+        var actuals = evalData.Take(horizon).Select(e => e.UnitsSold).ToArray();
+        var predicted = prediction.ForecastedUnits.Take(horizon).Select(x => MathF.Max(0, x)).ToArray();
+
+        return CalculateMetrics("SSA", actuals, predicted);
+    }
+
+    static ITransformer TrainLightGbm(MLContext mlContext, List<SsaModelInput> trainData, int windowSize)
+    {
+        var lgbmInputs = CreateLagFeatures(trainData, windowSize);
+        var dataView = mlContext.Data.LoadFromEnumerable(lgbmInputs);
+
+        var pipeline = mlContext.Transforms.CopyColumns("Label", nameof(LightGbmModelInput.Label))
+            .Append(mlContext.Regression.Trainers.LightGbm(new Microsoft.ML.Trainers.LightGbm.LightGbmRegressionTrainer.Options
+            {
+                LabelColumnName = "Label",
+                FeatureColumnName = nameof(LightGbmModelInput.Features),
+                NumberOfLeaves = 31,
+                MinimumExampleCountPerLeaf = 5,
+                LearningRate = 0.1,
+                NumberOfIterations = 100
+            }));
+
+        Console.Write("  ⏳ Training LightGBM...");
+        var model = pipeline.Fit(dataView);
+        Console.WriteLine(" ✅ Done");
+        return model;
+    }
+
+    static ModelMetrics EvaluateLightGbm(MLContext mlContext, ITransformer model, List<SsaModelInput> trainData, List<SsaModelInput> evalData, int windowSize, int productId)
+    {
+        var engine = mlContext.Model.CreatePredictionEngine<LightGbmModelInput, LightGbmModelOutput>(model);
+
+        var horizon = Math.Min(DefaultHorizon, evalData.Count);
+        if (horizon == 0) return new ModelMetrics();
+
+        // Seed with the last 'windowSize' elements of the training set
+        var currentWindow = trainData.TakeLast(windowSize).Select(x => x.UnitsSold).ToList();
+        var predicted = new float[horizon];
+
+        for (int i = 0; i < horizon; i++)
         {
-            Console.WriteLine("  ⚠️ No evaluation data available");
-            return;
+            var input = new LightGbmModelInput { Features = currentWindow.ToArray() };
+            var pred = engine.Predict(input);
+            var val = MathF.Max(0, pred.Score);
+            predicted[i] = val;
+
+            // Slide window
+            currentWindow.RemoveAt(0);
+            currentWindow.Add(val);
         }
 
         var actuals = evalData.Take(horizon).Select(e => e.UnitsSold).ToArray();
-        var predicted = prediction.ForecastedUnits.Take(horizon).ToArray();
 
+        return CalculateMetrics("LightGBM", actuals, predicted);
+    }
+
+    static List<LightGbmModelInput> CreateLagFeatures(List<SsaModelInput> timeSeries, int windowSize)
+    {
+        var inputs = new List<LightGbmModelInput>();
+        for (int i = windowSize; i < timeSeries.Count; i++)
+        {
+            var features = new float[windowSize];
+            for (int j = 0; j < windowSize; j++)
+            {
+                features[j] = timeSeries[i - windowSize + j].UnitsSold;
+            }
+            inputs.Add(new LightGbmModelInput
+            {
+                Features = features,
+                Label = timeSeries[i].UnitsSold
+            });
+        }
+        return inputs;
+    }
+
+    static ModelMetrics CalculateMetrics(string modelName, float[] actuals, float[] predicted)
+    {
         var mse = actuals.Zip(predicted, (a, p) => MathF.Pow(a - p, 2)).Average();
         var rmse = MathF.Sqrt(mse);
         var mae = actuals.Zip(predicted, (a, p) => MathF.Abs(a - p)).Average();
@@ -155,52 +187,33 @@ class Program
         var ssRes = actuals.Zip(predicted, (a, p) => MathF.Pow(a - p, 2)).Sum();
         var r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
 
-        Console.WriteLine($"\n  📈 Evaluation (Product {productId}, {horizon}-day holdout):");
-        Console.WriteLine($"     R²   = {r2:F4}");
-        Console.WriteLine($"     RMSE = {rmse:F2}");
-        Console.WriteLine($"     MAE  = {mae:F2}");
-        Console.WriteLine($"     MSE  = {mse:F2}");
+        Console.WriteLine($"  📈 {modelName} Metrics (30-day holdout):");
+        Console.WriteLine($"     R²   = {r2:F4} | RMSE = {rmse:F2} | MAE  = {mae:F2}");
 
-        var quality = r2 switch
-        {
-            >= 0.7f => "🟢 Good",
-            >= 0.4f => "🟡 Fair",
-            _ => "🔴 Poor"
-        };
-        Console.WriteLine($"     Quality: {quality}");
+        return new ModelMetrics { ModelName = modelName, R2 = r2, Rmse = rmse, Mae = mae };
     }
 
-    static void SaveModel(MLContext mlContext, ITransformer model, IDataView dataView, int productId)
+    static void PrintComparisonReport(List<ModelMetrics> ssaMetrics, List<ModelMetrics> lgbmMetrics)
     {
-        var solutionRoot = GetSolutionRoot();
-        var outputPath = Path.Combine(solutionRoot, "MySupplyChain.Infrastructure", "MLModels", $"ssa_product_{productId}.zip");
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        mlContext.Model.Save(model, dataView.Schema, outputPath);
-        Console.WriteLine($"  💾 Model saved: {outputPath}");
-    }
+        Console.WriteLine("\n\n📊 FINAL COMPARISON REPORT: SSA vs LightGBM");
+        Console.WriteLine("===========================================");
+        Console.WriteLine("Averaged across all products for a 30-day prediction horizon.\n");
 
-    static void TestPredictions(MLContext mlContext, ITransformer model, int productId)
-    {
-        var engine = model.CreateTimeSeriesEngine<SsaModelInput, SsaForecastOutput>(mlContext);
-        var prediction = engine.Predict();
+        var avgSsaRmse = ssaMetrics.Average(m => m.Rmse);
+        var avgSsaMae = ssaMetrics.Average(m => m.Mae);
+        var avgSsaR2 = ssaMetrics.Average(m => m.R2);
 
-        Console.WriteLine($"\n  🔮 {DefaultHorizon}-Day Forecast (Product {productId}):");
-        Console.WriteLine($"     {"Day",-5} {"Forecast",-10} {"Lower",-10} {"Upper",-10}");
-        Console.WriteLine($"     {new string('-', 35)}");
+        var avgLgbmRmse = lgbmMetrics.Average(m => m.Rmse);
+        var avgLgbmMae = lgbmMetrics.Average(m => m.Mae);
+        var avgLgbmR2 = lgbmMetrics.Average(m => m.R2);
 
-        for (int i = 0; i < Math.Min(7, prediction.ForecastedUnits.Length); i++)
-        {
-            var f = MathF.Max(0, prediction.ForecastedUnits[i]);
-            var l = MathF.Max(0, prediction.LowerBound[i]);
-            var u = MathF.Max(0, prediction.UpperBound[i]);
-            Console.WriteLine($"     {i + 1,-5} {f,-10:F1} {l,-10:F1} {u,-10:F1}");
-        }
-
-        if (prediction.ForecastedUnits.Length > 7)
-            Console.WriteLine($"     ... ({prediction.ForecastedUnits.Length - 7} more days)");
-
-        var total = prediction.ForecastedUnits.Select(x => MathF.Max(0, x)).Sum();
-        Console.WriteLine($"\n     Total {DefaultHorizon}-day forecast: {total:F1} units");
+        Console.WriteLine($"| Metric | SSA (Current) | LightGBM (Proposed) | Improvement |");
+        Console.WriteLine($"|--------|---------------|---------------------|-------------|");
+        Console.WriteLine($"| RMSE   | {avgSsaRmse,13:F2} | {avgLgbmRmse,19:F2} | {((avgSsaRmse - avgLgbmRmse) / avgSsaRmse * 100),10:F1}% |");
+        Console.WriteLine($"| MAE    | {avgSsaMae,13:F2} | {avgLgbmMae,19:F2} | {((avgSsaMae - avgLgbmMae) / avgSsaMae * 100),10:F1}% |");
+        Console.WriteLine($"| R²     | {avgSsaR2,13:F4} | {avgLgbmR2,19:F4} | {(avgLgbmR2 - avgSsaR2),11:F4} |");
+        
+        Console.WriteLine("\n✅ Model training and comparison completed.");
     }
 
     static List<TimeSeriesRecord> LoadTimeSeriesData(string path)
@@ -231,3 +244,24 @@ class Program
 }
 
 record TimeSeriesRecord(DateTime Date, int Store, int Item, float Sales);
+
+public class LightGbmModelInput
+{
+    [VectorType(30)]
+    public float[] Features { get; set; } = new float[30];
+    public float Label { get; set; }
+}
+
+public class LightGbmModelOutput
+{
+    [ColumnName("Score")]
+    public float Score { get; set; }
+}
+
+public struct ModelMetrics
+{
+    public string ModelName { get; set; }
+    public float R2 { get; set; }
+    public float Rmse { get; set; }
+    public float Mae { get; set; }
+}
