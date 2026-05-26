@@ -141,50 +141,7 @@ dotnet test --collect:"XPlat Code Coverage"
 - **Integration tests** — Full API lifecycle via `WebApplicationFactory` with in-memory EF Core
 - **Auth tests** — Registration, login, token validation, duplicate user handling
 
-## Performance & Micro-Benchmarks
 
-To validate real-world readiness, the solution includes a dedicated **BenchmarkDotNet** micro-benchmark suite (`MySupplyChain.Benchmarks`) evaluating CSV parsing throughput, forecasting overhead, and CQRS handler latency.
-
-The following benchmarks were executed on:
-- **OS**: Windows 11 (10.0.26200.8457)
-- **CPU**: 11th Gen Intel Core i5-1135G7 2.40GHz, 1 CPU, 8 logical and 4 physical cores
-- **Runtime**: .NET 10.0.8 (10.0.826.23019), X64 RyuJIT AVX-512F+CD+BW+DQ+VL+VBMI
-
-### 1. ML.NET SSA Forecasting Latency
-Measures the latency of the Singular Spectrum Analysis (SSA) forecasting pipeline versus the fallback moving-average calculator.
-
-| Method | Mean | Max | P95 | Allocated | GC Gen 0 |
-|---|---:|---:|---:|---:|---:|
-| **SSA Forecast** (30-day history, 7-day horizon) | **1.134 ms** | 1.679 ms | 1.639 ms | 686.92 KB | 15.6250 |
-| **SSA Forecast** (90-day history, 30-day horizon) | **967.22 μs** | 1.194 ms | 1.192 ms | 380.92 KB | 15.6250 |
-| **SSA Forecast** (365-day history, 30-day horizon) | **857.63 μs** | 1.144 ms | 1.119 ms | 381.99 KB | 15.6250 |
-| **Fallback Moving-Average** (no model) | **1.15 μs** | 1.64 μs | 1.61 μs | 1.50 KB | 0.3662 |
-
-> [!TIP]
-> Even with a full year of sales history (365 days) and a 30-day prediction horizon, the ML.NET SSA forecaster runs in **under 1 millisecond** (857.63 μs) with zero external network overhead, confirming it is highly suitable for real-time order-processing pipelines.
-
-### 2. CQRS Commands & Queries
-Measures the end-to-end execution of MediatR command and query handlers using an in-memory database context.
-
-| Method | Mean | Max | P95 | Allocated | GC Gen 0 / Gen 1 |
-|---|---:|---:|---:|---:|---:|
-| **CreateProductCommandHandler** | **1.366 ms** | 2.580 ms | 2.470 ms | 1.36 MB | 335.9375 / 0 |
-| **CreateOrderCommandHandler** (No reorder) | **4.612 ms** | 6.458 ms | 6.185 ms | 4.52 MB | 1123.0469 / 76.1719 |
-| **GetAllProductsQuery** (50 products) | **21.44 μs** | 31.13 μs | 28.68 μs | 36.36 KB | 8.8806 / 0 |
-| **GetProductForecastQuery** (365-day history) | **311.14 μs** | 385.62 μs | 369.75 μs | 196.62 KB | 44.9219 / 3.9063 |
-
-> [!NOTE]
-> Command handlers include database seeding and complete lifecycle execution, achieving single-digit millisecond latency. Queries run in microseconds due to optimized LINQ projections.
-
-### 3. CSV Dataset Parsing
-Measures string splitting and token parsing performance on the Kaggle demand forecasting dataset using standard .NET file streaming.
-
-| Method | Size | Mean | Max | P95 | Allocated |
-|---|---|---:|---:|---:|---:|
-| **Parse test.csv** (~45K rows) | 0.9 MB | **6.514 ms** | 9.078 ms | 8.602 ms | 10.99 MB |
-| **Parse train.csv** (913K rows) | 17.3 MB | **297.895 ms** | 320.369 ms | 315.194 ms | 221.17 MB |
-
----
 
 ## Tech Stack
 
