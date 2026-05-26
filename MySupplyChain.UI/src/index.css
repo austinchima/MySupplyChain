@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Material 3 Dark Color Palette ── */
+  --color-inverse-primary: #0059c7;
+  --color-surface-dim: #111317;
+  --color-surface-variant: #333539;
+  --color-surface-container-lowest: #0c0e12;
+  --color-on-secondary-fixed: #002113;
+  --color-surface-container-low: #1a1c20;
+  --color-primary-fixed: #d9e2ff;
+  --color-outline-variant: #424754;
+  --color-on-tertiary-container: #5b0017;
+  --color-on-surface-variant: #c2c6d7;
+  --color-background: #111317;
+  --color-on-tertiary: #67001b;
+  --color-on-primary: #002d6d;
+  --color-inverse-on-surface: #2f3035;
+  --color-tertiary: #ffb2b7;
+  --color-surface-bright: #37393e;
+  --color-primary-container: #528dff;
+  --color-on-background: #e2e2e8;
+  --color-surface-tint: #afc6ff;
+  --color-on-tertiary-fixed-variant: #92002a;
+  --color-on-surface: #e2e2e8;
+  --color-surface-container: #1e2024;
+  --color-outline: #8c90a0;
+  --color-error: #ffb4ab;
+  --color-on-tertiary-fixed: #40000d;
+  --color-surface-container-highest: #333539;
+  --color-secondary-fixed: #6ffbbe;
+  --color-on-primary-fixed: #001944;
+  --color-primary-fixed-dim: #afc6ff;
+  --color-on-primary-container: #00275f;
+  --color-on-secondary: #003824;
+  --color-on-primary-fixed-variant: #004299;
+  --color-on-error-container: #ffdad6;
+  --color-secondary-fixed-dim: #4edea3;
+  --color-on-secondary-container: #00311f;
+  --color-tertiary-container: #ff516a;
+  --color-tertiary-fixed-dim: #ffb2b7;
+  --color-surface: #111317;
+  --color-inverse-surface: #e2e2e8;
+  --color-tertiary-fixed: #ffdadb;
+  --color-primary: #afc6ff;
+  --color-secondary-container: #00a572;
+  --color-on-secondary-fixed-variant: #005236;
+  --color-secondary: #4edea3;
+  --color-error-container: #93000a;
+  --color-surface-container-high: #282a2e;
+  --color-on-error: #690005;
+
+  /* ── Spacing ── */
+  --spacing-gutter: 16px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-margin-desktop: 32px;
+  --spacing-xl: 32px;
+  --spacing-base: 4px;
+  --spacing-lg: 24px;
+  --spacing-margin-mobile: 16px;
+
+  /* ── Typography Variables ── */
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-mono: "Fira Code", "Courier New", monospace;
+}
+
+/* ── Global Typography ── */
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Material Symbols: consistent sizing ── */
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  font-size: 24px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Filled variant */
+.material-symbols-outlined.filled {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+/* ── Scrollbar Styling (dark theme) ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
+
+/* ── SVG Chart Helper Classes ── */
+.chart-grid-line {
+  stroke: var(--color-outline-variant);
+  stroke-width: 0.5;
+  opacity: 0.4;
+}
+.chart-axis-label {
+  fill: var(--color-outline);
+  font-size: 11px;
+  font-family: "Outfit", sans-serif;
+}
+
+/* ── Premium UI/UX Polish Utility Classes ── */
+
+/* Glassmorphism Container Card */
+.glass-card {
+  background: rgba(30, 32, 36, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(175, 198, 255, 0.15);
+  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Neon Glow Accents */
+.neon-glow-primary {
+  box-shadow: 0 0 25px -5px rgba(175, 198, 255, 0.15);
+}
+
+.neon-glow-secondary {
+  box-shadow: 0 0 25px -5px rgba(78, 222, 163, 0.12);
+}
+
+/* Gradient Text Fill */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Precise Corporate Headings */
+.header-title {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+/* Clean Technical Labels */
+.label-technical {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Highly Interactive Glowing Form Fields */
+.input-glow {
+  background: rgba(22, 24, 28, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.input-glow:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(175, 198, 255, 0.12);
+  outline: none;
+}
+
+/* Floating Aura Micro-animation */
+@keyframes floatGlow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-15px) scale(1.03); }
+}
+
+.glow-aura-pulse {
+  animation: floatGlow 10s infinite ease-in-out;
+}
+
