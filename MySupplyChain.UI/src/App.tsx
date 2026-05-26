@@ -17,67 +17,14 @@ interface LoginGateProps {
   error: string | null;
   setError: (v: string | null) => void;
   handleManualLogin: (e: React.FormEvent) => void;
-  handleSandboxLogin: () => void;
 }
 
 function LoginGate({
-  usernameOrEmail,
   setUsernameOrEmail,
-  password,
   setPassword,
   error,
-  setError,
-  handleManualLogin,
-  handleSandboxLogin
+  handleManualLogin
 }: LoginGateProps) {
-  const [activeView, setActiveView] = useState<"login" | "register">("login");
-  
-  // Registration local state for Beta requests
-  const [regUsername, setRegUsername] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [registeredSuccess, setRegisteredSuccess] = useState(false);
-  const [registerLoading, setRegisterLoading] = useState(false);
-
-  const handleBetaRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setRegisteredSuccess(false);
-
-    if (!regUsername || !regEmail || !regPassword) {
-      setError("Please complete all registration fields.");
-      return;
-    }
-
-    setRegisterLoading(true);
-    try {
-      await auth.register({
-        username: regUsername,
-        email: regEmail,
-        password: regPassword
-      });
-      setRegisteredSuccess(true);
-      setError(null);
-      // Clean form fields
-      setRegUsername("");
-      setRegEmail("");
-      setRegPassword("");
-      // Transition back to login view so they can sign in
-      setActiveView("login");
-    } catch (err: any) {
-      console.error("Beta access request failed:", err);
-      setError(err.message || "Failed to submit beta request. Please verify your inputs.");
-    } finally {
-      setRegisterLoading(false);
-    }
-  };
-
-  const handleToggleView = (view: "login" | "register") => {
-    setError(null);
-    setRegisteredSuccess(false);
-    setActiveView(view);
-  };
-
   return (
     <div className="min-h-screen bg-[#0c0e12] flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
       
@@ -109,33 +56,16 @@ function LoginGate({
         <div className="text-center space-y-3">
           <div className="inline-flex items-center justify-center p-3.5 bg-gradient-to-br from-primary/15 to-secondary/5 border border-primary/20 rounded-2xl text-primary shadow-[0_8px_20px_rgba(175,198,255,0.15)] mb-1">
             <span className="material-symbols-outlined text-[32px] bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              {activeView === "login" ? "admin_panel_settings" : "verified_user"}
+              terminal
             </span>
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-[#e2e2e8] to-secondary bg-clip-text text-transparent">
-            {activeView === "login" ? "MySupplyChain Portal" : "Apply for Beta Access"}
+            MySupplyChain Sandbox
           </h1>
           <p className="text-on-surface-variant/80 text-sm max-w-[340px] mx-auto leading-relaxed">
-            {activeView === "login" 
-              ? "Sign in to connect to your live enterprise forecasting dashboard." 
-              : "Provision your professional sandbox account with 120 days of complimentary beta access."}
+            Explore the live frontend and backend system. The application is running connected to a local ML.NET instance and database.
           </p>
         </div>
-
-        {/* Success celebration banner */}
-        {registeredSuccess && (
-          <div className="bg-secondary-container/10 border border-secondary/30 rounded-2xl p-4 text-[#4edea3] text-xs flex flex-col gap-1.5 animate-bounce-short shadow-md">
-            <div className="flex items-start gap-2.5">
-              <span className="material-symbols-outlined text-[18px] text-secondary">check_circle</span>
-              <span className="font-semibold leading-relaxed">
-                Beta Account Created Successfully!
-              </span>
-            </div>
-            <p className="text-on-surface-variant/90 leading-relaxed pl-7">
-              Your credentials are now active for a 120-day trial. Please sign in below to access the platform.
-            </p>
-          </div>
-        )}
 
         {/* Error Notification Alert */}
         {error && (
@@ -145,178 +75,29 @@ function LoginGate({
           </div>
         )}
 
-        {activeView === "login" ? (
-          /* LOGIN VIEW */
-          <form onSubmit={handleManualLogin} className="space-y-5">
-            {/* Instant Sandbox Bypass */}
-            <div className="pb-3 border-b border-outline-variant/15">
-              <button
-                type="button"
-                onClick={handleSandboxLogin}
-                className="w-full bg-gradient-to-r from-secondary to-[#60efb7] hover:from-[#60efb7] hover:to-secondary text-on-secondary-container font-extrabold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(78,222,163,0.12)] hover:shadow-[0_4px_25px_rgba(78,222,163,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
-                Launch Instant Sandbox Session
-              </button>
-              <div className="text-[10px] text-outline/80 text-center mt-2 leading-relaxed">
-                Bypasses login gates instantly using pre-seeded test data.
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-on-surface-variant/90 tracking-wide uppercase pl-1">
-                Username or Corporate Email
-              </label>
-              <div className="relative group">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors duration-250">
-                  mail
-                </span>
-                <input
-                  type="text"
-                  value={usernameOrEmail}
-                  onChange={(e) => setUsernameOrEmail(e.target.value)}
-                  placeholder="e.g. enterprise_admin"
-                  className="w-full bg-[#1a1c20]/65 text-on-surface border border-outline-variant/35 focus:border-primary rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all duration-250 placeholder-outline/40"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-on-surface-variant/90 tracking-wide uppercase pl-1">
-                Secure Password
-              </label>
-              <div className="relative group">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors duration-250">
-                  lock
-                </span>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  className="w-full bg-[#1a1c20]/65 text-on-surface border border-outline-variant/35 focus:border-primary rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all duration-250 placeholder-outline/40"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-primary to-[#85abff] hover:from-[#c2d5ff] hover:to-[#afc6ff] text-on-primary-container font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(175,198,255,0.15)] hover:shadow-[0_4px_25px_rgba(175,198,255,0.3)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[20px]">login</span>
-              Sign In to System
-            </button>
-
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => handleToggleView("register")}
-                className="text-xs text-outline/80 hover:text-primary transition-colors duration-250 cursor-pointer font-bold hover:underline"
-              >
-                Don't have beta access? Apply for 120-Day Trial
-              </button>
-            </div>
-          </form>
-        ) : (
-          /* REGISTER / BETA REQUEST VIEW */
-          <form onSubmit={handleBetaRequest} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-on-surface-variant/90 tracking-wide uppercase pl-1">
-                Corporate Username
-              </label>
-              <div className="relative group">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors duration-250">
-                  person
-                </span>
-                <input
-                  type="text"
-                  value={regUsername}
-                  onChange={(e) => setRegUsername(e.target.value)}
-                  placeholder="e.g. global_admin"
-                  className="w-full bg-[#1a1c20]/65 text-on-surface border border-outline-variant/35 focus:border-primary rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all duration-250 placeholder-outline/40"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-on-surface-variant/90 tracking-wide uppercase pl-1">
-                Professional Email
-              </label>
-              <div className="relative group">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors duration-250">
-                  corporate_fare
-                </span>
-                <input
-                  type="email"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  placeholder="e.g. logistics@company.com"
-                  className="w-full bg-[#1a1c20]/65 text-on-surface border border-outline-variant/35 focus:border-primary rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all duration-250 placeholder-outline/40"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-on-surface-variant/90 tracking-wide uppercase pl-1">
-                Establish Password
-              </label>
-              <div className="relative group">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors duration-250">
-                  lock_reset
-                </span>
-                <input
-                  type="password"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  placeholder="Minimum 8 characters with numbers"
-                  className="w-full bg-[#1a1c20]/65 text-on-surface border border-outline-variant/35 focus:border-primary rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all duration-250 placeholder-outline/40"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={registerLoading}
-              className="w-full bg-gradient-to-r from-secondary to-[#60efb7] hover:from-[#60efb7] hover:to-secondary text-on-secondary-container font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(78,222,163,0.1)] hover:shadow-[0_4px_25px_rgba(78,222,163,0.25)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-2"
-            >
-              {registerLoading ? (
-                <>
-                  <span className="material-symbols-outlined text-[20px] animate-spin">sync</span>
-                  Processing Application...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[20px]">assignment_turned_in</span>
-                  Request Beta Access
-                </>
-              )}
-            </button>
-
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => handleToggleView("login")}
-                className="text-xs text-outline/80 hover:text-primary transition-colors duration-250 cursor-pointer font-bold hover:underline"
-              >
-                Already have credentials? Sign In
-              </button>
-            </div>
-          </form>
-        )}
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              setUsernameOrEmail("admin");
+              setPassword("Admin@123");
+              handleManualLogin(e);
+            }}
+            className="w-full bg-gradient-to-r from-primary to-[#85abff] hover:from-[#c2d5ff] hover:to-[#afc6ff] text-on-primary-container font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(175,198,255,0.15)] hover:shadow-[0_4px_25px_rgba(175,198,255,0.3)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[22px]">rocket_launch</span>
+            Launch Interactive Sandbox
+          </button>
+        </div>
 
         {/* Back to Info Page Link */}
-        <div className="text-center pt-2 border-t border-outline-variant/15">
+        <div className="text-center pt-4 border-t border-outline-variant/15">
           <a 
             href="/" 
             className="inline-flex items-center gap-1.5 text-xs text-outline/80 hover:text-primary transition-colors duration-250 cursor-pointer font-medium"
           >
             <span className="material-symbols-outlined text-[14px]">arrow_back</span>
-            Back to Corporate Portal
+            Back to Case Study
           </a>
         </div>
       </div>
@@ -375,12 +156,6 @@ function App() {
     setLoading(false);
   };
 
-  const handleSandboxLogin = async () => {
-    setLoading(true);
-    await attemptLogin({ usernameOrEmail: "admin", password: "Admin@123" });
-    setLoading(false);
-  };
-
   if (loading) {
     return (
       <div className="w-full min-h-screen bg-[#0c0e12] flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
@@ -418,8 +193,7 @@ function App() {
     setPassword,
     error,
     setError,
-    handleManualLogin,
-    handleSandboxLogin
+    handleManualLogin
   };
 
   return (
