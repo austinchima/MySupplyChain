@@ -142,3 +142,8 @@ data/
 # ML.NET models (large binary files)
 MySupplyChain.Infrastructure/MLModels/*.zip
 *.onnx
+
+# Graphify knowledge graph outputs
+graphify-out/
+!graphify-out/GRAPH_REPORT.md
+
