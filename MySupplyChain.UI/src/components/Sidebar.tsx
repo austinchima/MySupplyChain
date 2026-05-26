@@ -9,7 +9,7 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { to: "/", icon: "dashboard", label: "Dashboard" },
+  { to: "/dashboard", icon: "dashboard", label: "Dashboard" },
   { to: "/inventory", icon: "inventory_2", label: "Inventory" },
   { to: "/forecasting", icon: "monitoring", label: "Forecasting" },
   { to: "/orders", icon: "receipt_long", label: "Orders" },
@@ -24,7 +24,7 @@ function SidebarLink({ to, icon, label }: NavItem) {
   return (
     <NavLink
       to={to}
-      end={to === "/"}
+      end={to === "/dashboard"}
       className={({ isActive }) =>
         `flex items-center gap-4 mx-md px-md py-sm rounded-full transition-all duration-200 text-sm font-semibold tracking-wide ${
           isActive

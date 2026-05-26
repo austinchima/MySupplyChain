@@ -102,3 +102,8 @@ export interface AuthResponse {
   token: string;
   message: string;
 }
+
+export interface ImportSummaryDto {
+  recordsImported: number;
+  newProductsCreated: number;
+}

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import Topbar from "../components/Topbar";
 import StatusBadge from "../components/StatusBadge";
 import CreateProductModal from "../components/CreateProductModal";
+import CsvImportModal from "../components/CsvImportModal";
 import { products } from "../lib/api";
 import type { ProductDto } from "../types/api";
 
@@ -18,6 +19,7 @@ export default function ProductInventoryList() {
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("sku");
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -63,6 +65,13 @@ export default function ProductInventoryList() {
             </p>
           </div>
           <div className="flex gap-sm">
+            <button
+              onClick={() => setImportOpen(true)}
+              className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
+              Import CSV
+            </button>
             <button className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs">
               <span className="material-symbols-outlined text-[18px]">filter_list</span>
               Filter
@@ -223,6 +232,16 @@ export default function ProductInventoryList() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={fetchProducts}
+      />
+
+      <CsvImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImportSuccess={(summary) => {
+          fetchProducts();
+          // Optional: Add simple alert or dashboard log of success
+          alert(`Successfully imported ${summary.recordsImported} sales records and created ${summary.newProductsCreated} new product placeholders!`);
+        }}
       />
     </>
   );

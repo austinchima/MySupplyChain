@@ -12,6 +12,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  ImportSummaryDto,
 } from "../types/api";
 
 // ─── Base URL (proxied via Vite in dev, direct in prod) ────────────────────
@@ -32,9 +33,12 @@ async function request<T>(
 ): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
   };
+
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -118,4 +122,15 @@ export const orders = {
 export const reorderRequests = {
   /** GET /api/reorderrequests → ReorderRequestDto[] */
   getAll: () => request<ReorderRequestDto[]>("/reorderrequests"),
+};
+
+// ─── Sales Histories ──────────────────────────────────────────────────────
+
+export const salesHistories = {
+  /** POST /api/saleshistories/import (Multipart form) */
+  import: (formData: FormData) =>
+    request<ImportSummaryDto>("/saleshistories/import", {
+      method: "POST",
+      body: formData,
+    }),
 };
