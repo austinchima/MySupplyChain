@@ -9,6 +9,8 @@ COPY MySupplyChain.Infrastructure/MySupplyChain.Infrastructure.csproj MySupplyCh
 COPY MySupplyChain.API/MySupplyChain.API.csproj MySupplyChain.API/
 COPY MySupplyChain.ModelTrainer/MySupplyChain.ModelTrainer.csproj MySupplyChain.ModelTrainer/
 COPY MySupplyChain.Tests/MySupplyChain.Tests.csproj MySupplyChain.Tests/
+COPY MySupplyChain.Benchmarks/MySupplyChain.Benchmarks.csproj MySupplyChain.Benchmarks/
+
 
 RUN dotnet restore MySupplyChain.slnx
 
