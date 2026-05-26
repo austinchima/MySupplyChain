@@ -17,6 +17,7 @@ interface LoginGateProps {
   error: string | null;
   setError: (v: string | null) => void;
   handleManualLogin: (e: React.FormEvent) => void;
+  handleSandboxLogin: () => void;
 }
 
 function LoginGate({
@@ -26,7 +27,8 @@ function LoginGate({
   setPassword,
   error,
   setError,
-  handleManualLogin
+  handleManualLogin,
+  handleSandboxLogin
 }: LoginGateProps) {
   const [activeView, setActiveView] = useState<"login" | "register">("login");
   
@@ -146,6 +148,21 @@ function LoginGate({
         {activeView === "login" ? (
           /* LOGIN VIEW */
           <form onSubmit={handleManualLogin} className="space-y-5">
+            {/* Instant Sandbox Bypass */}
+            <div className="pb-3 border-b border-outline-variant/15">
+              <button
+                type="button"
+                onClick={handleSandboxLogin}
+                className="w-full bg-gradient-to-r from-secondary to-[#60efb7] hover:from-[#60efb7] hover:to-secondary text-on-secondary-container font-extrabold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(78,222,163,0.12)] hover:shadow-[0_4px_25px_rgba(78,222,163,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+                Launch Instant Sandbox Session
+              </button>
+              <div className="text-[10px] text-outline/80 text-center mt-2 leading-relaxed">
+                Bypasses login gates instantly using pre-seeded test data.
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-xs font-bold text-on-surface-variant/90 tracking-wide uppercase pl-1">
                 Username or Corporate Email
@@ -358,6 +375,12 @@ function App() {
     setLoading(false);
   };
 
+  const handleSandboxLogin = async () => {
+    setLoading(true);
+    await attemptLogin({ usernameOrEmail: "admin", password: "Admin@123" });
+    setLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="w-full min-h-screen bg-[#0c0e12] flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
@@ -395,7 +418,8 @@ function App() {
     setPassword,
     error,
     setError,
-    handleManualLogin
+    handleManualLogin,
+    handleSandboxLogin
   };
 
   return (
