@@ -5,6 +5,14 @@ using MySupplyChain.Application.SalesHistories.Commands.ImportSalesHistory;
 
 namespace MySupplyChain.API.Controllers;
 
+public class ImportCsvRequest
+{
+    public IFormFile File { get; set; } = null!;
+    public string SkuColumn { get; set; } = string.Empty;
+    public string DateColumn { get; set; } = string.Empty;
+    public string QuantityColumn { get; set; } = string.Empty;
+}
+
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
@@ -13,28 +21,24 @@ public class SalesHistoriesController(IMediator mediator, ILogger<SalesHistories
     [HttpPost("import")]
     [ProducesResponseType(typeof(ImportSummaryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ImportSummaryDto>> Import(
-        [FromForm] IFormFile file, 
-        [FromForm] string skuColumn, 
-        [FromForm] string dateColumn, 
-        [FromForm] string quantityColumn)
+    public async Task<ActionResult<ImportSummaryDto>> Import([FromForm] ImportCsvRequest request)
     {
-        if (file == null || file.Length == 0)
+        if (request.File == null || request.File.Length == 0)
         {
             return BadRequest("No file uploaded.");
         }
 
-        logger.LogInformation("Importing CSV: {FileName}, size: {Size}", file.FileName, file.Length);
+        logger.LogInformation("Importing CSV: {FileName}, size: {Size}", request.File.FileName, request.File.Length);
 
         using var memoryStream = new MemoryStream();
-        await file.CopyToAsync(memoryStream);
+        await request.File.CopyToAsync(memoryStream);
 
         var command = new ImportSalesHistoryCommand
         {
             FileContent = memoryStream.ToArray(),
-            SkuColumn = skuColumn,
-            DateColumn = dateColumn,
-            QuantityColumn = quantityColumn
+            SkuColumn = request.SkuColumn,
+            DateColumn = request.DateColumn,
+            QuantityColumn = request.QuantityColumn
         };
 
         var summary = await mediator.Send(command);
