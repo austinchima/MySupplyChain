@@ -228,10 +228,14 @@ export default function Orders() {
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-md py-24 text-center text-sm text-on-surface-variant">
-                      <div className="max-w-xs mx-auto space-y-2">
+                      <div className="max-w-md mx-auto space-y-3 px-md">
                         <span className="material-symbols-outlined text-[48px] text-outline opacity-20">receipt_long</span>
-                        <p className="font-bold text-on-surface">No orders found.</p>
-                        <p className="text-xs">Your fulfillment queue is currently empty.</p>
+                        <div className="space-y-1">
+                          <p className="font-bold text-on-surface text-base">No orders found.</p>
+                          <p className="text-xs leading-relaxed max-w-[280px] mx-auto">
+                            Your fulfillment queue is currently empty. Active transactions will appear here.
+                          </p>
+                        </div>
                       </div>
                     </td>
                   </tr>
