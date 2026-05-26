@@ -14,7 +14,6 @@ import {
   Upload,
   Brain,
   CheckCircle2,
-  Send,
   Briefcase
 } from "lucide-react";
 
@@ -50,19 +49,17 @@ export function CustomCursor() {
     const dot = cursorDotRef.current;
     if (!cursor || !dot) return;
 
+    // Use fast setters for cursor positions to bypass heavy tween creation
+    const xTo = gsap.quickTo(cursor, "x", { duration: 0.1, ease: "power2.out" });
+    const yTo = gsap.quickTo(cursor, "y", { duration: 0.1, ease: "power2.out" });
+    const xDotTo = gsap.quickTo(dot, "x", { duration: 0.02, ease: "none" });
+    const yDotTo = gsap.quickTo(dot, "y", { duration: 0.02, ease: "none" });
+
     const onMove = (e: MouseEvent) => {
-      gsap.to(cursor, {
-        x: e.clientX,
-        y: e.clientY,
-        duration: 0.1,
-        ease: "power2.out",
-      });
-      gsap.to(dot, {
-        x: e.clientX,
-        y: e.clientY,
-        duration: 0.02,
-        ease: "none",
-      });
+      xTo(e.clientX);
+      yTo(e.clientY);
+      xDotTo(e.clientX);
+      yDotTo(e.clientY);
     };
 
     const onEnter = () => {
@@ -127,11 +124,11 @@ export function CustomCursor() {
 // ─── 2. Navbar Component
 // ────────────────────────────────────────────────────────────────────────────
 const NAV_LINKS = [
-  { label: "Problem", href: "#problem" },
-  { label: "Solution", href: "#solution" },
-  { label: "Architecture", href: "#tech" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Early Access", href: "#cta" },
+  { label: "The Challenge", href: "#problem" },
+  { label: "The Architecture", href: "#tech" },
+  { label: "The Engine", href: "#solution" },
+  { label: "Ingestion Pipeline", href: "#how-it-works" },
+  { label: "Case Study", href: "#cta" },
 ];
 
 export function Navbar() {
@@ -198,13 +195,13 @@ export function Navbar() {
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-on-surface-variant border border-outline-variant/40 rounded-xl hover:border-outline-variant hover:text-on-surface transition-all duration-200"
             >
               <GithubIcon className="w-4 h-4" />
-              GitHub
+              GitHub Source
             </a>
             <a
               href="/dashboard"
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-on-primary bg-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl shadow-md hover:shadow-primary/10 transition-all duration-200"
             >
-              Console Console
+              Launch Sandbox
               <ArrowRight className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -241,13 +238,13 @@ export function Navbar() {
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-on-surface-variant border border-outline-variant/40 rounded-xl"
             >
-              <GithubIcon className="w-4 h-4" /> GitHub
+              <GithubIcon className="w-4 h-4" /> GitHub Source
             </a>
             <a
               href="/dashboard"
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-on-primary bg-primary rounded-xl text-center"
             >
-              Console
+              Launch Sandbox
             </a>
           </div>
         </div>
@@ -346,7 +343,7 @@ export function HeroSection() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary" />
               </span>
               <span className="text-xs font-semibold text-secondary">
-                Now in Early Access — 10 Spots Available
+                Full-Stack Architecture & AI Case Study
               </span>
             </div>
 
@@ -354,46 +351,42 @@ export function HeroSection() {
               ref={headlineRef}
               className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] mb-6 text-on-surface"
             >
-              Stop Guessing.<br />
-              Start <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Forecasting.</span>
+              Predicting Demand.<br />
+              Engineering <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Scale.</span>
             </h1>
 
-            <p ref={subRef} className="text-base sm:text-lg text-on-surface-variant leading-relaxed mb-10 max-w-lg">
-              AI-powered demand forecasting that analyzes your historical sales to tell you exactly what to reorder and when—so you never run out of stock or lock cash in overstock.
+            <p ref={subRef} className="text-base sm:text-lg text-on-surface-variant leading-relaxed mb-10 w-full max-w-[512px]">
+              An elite, high-performance systems engineering showcase. Powered by an ASP.NET Core Clean Architecture API, a native ML.NET forecasting engine, and a premium glassmorphic React terminal.
             </p>
 
             <div ref={ctaRef} className="flex flex-wrap gap-4 mb-8">
               <a
-                href="#cta"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector("#cta")?.scrollIntoView({ behavior: "smooth" });
-                }}
+                href="/dashboard"
                 className="group flex items-center gap-2.5 px-8 py-4 text-sm font-bold text-on-primary bg-primary hover:bg-primary-container hover:text-on-primary-container rounded-2xl transition-all duration-300 shadow-lg hover:shadow-primary/15"
               >
-                Try Free for 120 Days
+                Launch Sandbox Terminal
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </a>
               <a
-                href="#how-it-works"
+                href="#tech"
                 onClick={(e) => {
                   e.preventDefault();
-                  document.querySelector("#how-it-works")?.scrollIntoView({ behavior: "smooth" });
+                  document.querySelector("#tech")?.scrollIntoView({ behavior: "smooth" });
                 }}
                 className="flex items-center gap-2 px-8 py-4 text-sm font-semibold text-on-surface border border-outline-variant/60 rounded-2xl hover:border-secondary hover:text-secondary transition-all duration-300"
               >
-                See How It Works
+                Explore Technical Specs
               </a>
             </div>
 
             <div ref={trustRef} className="flex items-center gap-6 text-xs text-on-surface-variant">
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm text-secondary">check_circle</span>
-                No credit card required
+                Pure Clean Architecture (.NET 10)
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm text-secondary">check_circle</span>
-                Cancel anytime
+                Singular Spectrum Analysis (SSA)
               </span>
             </div>
           </div>
@@ -415,9 +408,9 @@ export function HeroSection() {
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: "Forecast Accuracy", value: "94.2%", trend: "+2.1%", color: "text-secondary" },
-                    { label: "Active SKUs", value: "1,247", trend: "+89 new", color: "text-primary" },
-                    { label: "Reorder Alerts", value: "12 active", trend: "Critical level", color: "text-tertiary" },
+                    { label: "Forecast Accuracy", value: "98.4%", trend: "+2.1%", color: "text-secondary" },
+                    { label: "Active SKUs", value: "3 active", trend: "Fully monitored", color: "text-primary" },
+                    { label: "Reorder Alerts", value: "1 active", trend: "Laptop Dell XPS 13", color: "text-tertiary" },
                   ].map((stat) => (
                     <div key={stat.label} className="bg-surface-container-low border border-outline-variant/30 rounded-xl p-3.5">
                       <p className="text-[10px] text-on-surface-variant mb-1 font-medium">{stat.label}</p>
@@ -470,8 +463,8 @@ export function HeroSection() {
                     <span className="material-symbols-outlined text-[18px]">warning</span>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-tertiary">Reorder Alert: Organic Flour (25kg)</p>
-                    <p className="text-[10px] text-on-surface-variant">Recommended reorder of 80 units due to seasonal demand spike.</p>
+                    <p className="text-xs font-bold text-tertiary">Reorder Alert: Laptop Dell XPS 13</p>
+                    <p className="text-[10px] text-on-surface-variant">Recommended reorder of 15 units due to stock dropping below threshold.</p>
                   </div>
                 </div>
               </div>
@@ -502,30 +495,30 @@ export function HeroSection() {
 const PROBLEMS = [
   {
     icon: AlertTriangle,
-    title: "The 3 AM Stockout Crisis",
-    description: "Your best-selling product flies out of stock. Lead times are weeks. You just lost days of vital, compounding revenues.",
-    stat: "23% of SMBs",
-    statLabel: "lose sales weekly to preventable stockouts",
+    title: "Unpredictable Stockout Dynamics",
+    description: "Determining stock thresholds under high transactional variance is notoriously difficult, leading to premature depletion and critical service level failures.",
+    stat: "High Variance",
+    statLabel: "univariate time-series noise spikes",
     color: "from-rose-500/10 to-rose-600/5",
     borderColor: "border-rose-500/20",
     iconColor: "text-rose-400",
   },
   {
     icon: Lock,
-    title: "The Cash-Trap Warehouse",
-    description: "You over-ordered inventory just to 'be safe.' Now valuable working capital is collecting dust on warehouse shelves.",
-    stat: "$1.1 Trillion",
-    statLabel: "locked up globally in excess storage fees",
+    title: "Inefficient Safety Allocations",
+    description: "Naive thresholding results in excessive buffer capital. Minimizing storage fees requires active safety stock optimization and lead-time buffering.",
+    stat: "Excess Buffer",
+    statLabel: "underutilized corporate working capital",
     color: "from-amber-500/10 to-amber-600/5",
     borderColor: "border-amber-500/20",
     iconColor: "text-amber-400",
   },
   {
     icon: Grid3X3,
-    title: "The Spreadsheet Nightmare",
-    description: "Relying on a dozen Excel tabs, copy-paste cell equations, and gut feeling. Safe growth cannot scale on fragile systems.",
-    stat: "67% of Brands",
-    statLabel: "still manage inventories on spreadsheets",
+    title: "Fragile Data Orchestration",
+    description: "Manual worksheets and legacy formulas do not scale, introducing schema drift, structural calculation errors, and slow batch inference pipelines.",
+    stat: "Brittle Logic",
+    statLabel: "formula errors and unscalable processes",
     color: "from-primary/10 to-primary/5",
     borderColor: "border-primary/20",
     iconColor: "text-primary",
@@ -536,28 +529,40 @@ export function ProblemSection() {
   const cardsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cards = cardsRef.current?.querySelectorAll(".problem-card");
-    if (!cards) return;
+    const container = cardsRef.current;
+    if (!container) return;
 
-    const tweens: gsap.core.Tween[] = [];
+    const cards = container.querySelectorAll(".problem-card");
+    if (cards.length === 0) return;
 
-    cards.forEach((card) => {
-      gsap.set(card, { y: 40, opacity: 0 });
-      const tween = gsap.to(card, {
-        y: 0,
-        opacity: 1,
-        duration: 0.7,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: card,
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
-      });
-      tweens.push(tween);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      gsap.set(cards, { opacity: 1, y: 0 });
+      return;
+    }
+
+    gsap.set(cards, { y: 30, opacity: 0 });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: container,
+        start: "top 85%",
+        toggleActions: "play none none none",
+      }
     });
 
-    return () => tweens.forEach(t => t.kill());
+    tl.to(cards, {
+      y: 0,
+      opacity: 1,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: "power2.out",
+    });
+
+    return () => {
+      tl.kill();
+      if (tl.scrollTrigger) tl.scrollTrigger.kill();
+    };
   }, []);
 
   return (
@@ -567,13 +572,13 @@ export function ProblemSection() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-error-container/20 border border-error/30 text-error text-xs font-bold mb-6">
-            The Problem
+            The Engineering Challenge
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-on-surface mb-6 tracking-tight">
-            Inventory Management Should Not Be a Crisis
+            Bridging Enterprise AI & Arbitrary Datasets
           </h2>
           <p className="text-base text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-            Every year, small businesses lose millions to manual stockout errors. The advanced forecasting systems designed to solve this are built only for enterprise budgets.
+            Real-world supply chains deal with dirty, unstructured data and unpredictable demand patterns. Traditional statistical models are fragile, while large neural networks are slow and compute-heavy.
           </p>
         </div>
 
@@ -606,29 +611,29 @@ export function ProblemSection() {
 const FEATURES = [
   {
     icon: TrendingUp,
-    title: "30-Day Demand Forecasts",
-    description: "Upload sales history and generate immediate demand predictions using Singular Spectrum Analysis—the standard in statistical univariate time-series modeling.",
-    highlight: "95% Confidence Bounds",
+    title: "Singular Spectrum Analysis",
+    description: "The backend leverages SSA algorithms to decompose univariate sales histories into deterministic trends, periodic oscillations, and unstructured noise.",
+    highlight: "ML.NET Time-Series Engine",
     metric: "30-Day",
     metricLabel: "Forecast Horizon",
     metricColor: "text-secondary",
   },
   {
     icon: Bell,
-    title: "Dynamic Reorder Alerts",
-    description: "Receive notifications detailing exactly when to place inventory orders, recommended volume, and automated dollar-denominated risk assessments.",
-    highlight: "Lead-Time Adjusted",
-    metric: "< 6 Hours",
-    metricLabel: "Trigger Time",
+    title: "Deterministic Reorder Alerts",
+    description: "A customized MediatR pipeline evaluates inventory levels against supplier lead times, raising notifications and calculating safety stock buffers.",
+    highlight: "MediatR CQRS Pipelines",
+    metric: "Real-time",
+    metricLabel: "Alert Telemetry",
     metricColor: "text-primary",
   },
   {
     icon: Monitor,
-    title: "Beautiful, Frictionless UI",
-    description: "Access a clean, dark-themed responsive command center. No enterprise certifications, six-week implementation plans, or IT support required.",
-    highlight: "Under 5 Min Setup",
-    metric: "Zero",
-    metricLabel: "Onboarding Friction",
+    title: "Glassmorphic UI Terminal",
+    description: "A highly responsive dashboard built using React 19, GSAP micro-animations, Outfit geometric typography, and Fira Code monospaced numeric scales.",
+    highlight: "Modern Styling System",
+    metric: "0 ms",
+    metricLabel: "Render Latency",
     metricColor: "text-tertiary",
   },
 ];
@@ -637,28 +642,40 @@ export function SolutionSection() {
   const cardsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cards = cardsRef.current?.querySelectorAll(".feature-card");
-    if (!cards) return;
+    const container = cardsRef.current;
+    if (!container) return;
 
-    const tweens: gsap.core.Tween[] = [];
+    const cards = container.querySelectorAll(".feature-card");
+    if (cards.length === 0) return;
 
-    cards.forEach((card) => {
-      gsap.set(card, { y: 40, opacity: 0 });
-      const tween = gsap.to(card, {
-        y: 0,
-        opacity: 1,
-        duration: 0.7,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: card,
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
-      });
-      tweens.push(tween);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      gsap.set(cards, { opacity: 1, y: 0 });
+      return;
+    }
+
+    gsap.set(cards, { y: 30, opacity: 0 });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: container,
+        start: "top 85%",
+        toggleActions: "play none none none",
+      }
     });
 
-    return () => tweens.forEach(t => t.kill());
+    tl.to(cards, {
+      y: 0,
+      opacity: 1,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: "power2.out",
+    });
+
+    return () => {
+      tl.kill();
+      if (tl.scrollTrigger) tl.scrollTrigger.kill();
+    };
   }, []);
 
   return (
@@ -668,13 +685,13 @@ export function SolutionSection() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-secondary/15 border border-secondary/30 text-secondary text-xs font-bold mb-6">
-            The Solution
+            The Implementation
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-on-surface mb-6 tracking-tight">
-            Predict Live Stock Needs. Save Idle Cash.
+            High-Performance AI Demand Pipelines
           </h2>
           <p className="text-base text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-            MySupplyChain replaces spreadsheet fatigue with a clean, MediatR-powered CQRS engine that runs mathematical demand forecasting on your actual sales records.
+            MySupplyChain replaces manual guesswork with an elegant, MediatR-powered CQRS backend engine, conducting mathematical time-series forecasting directly on C# databases.
           </p>
         </div>
 
@@ -749,28 +766,42 @@ export function TechSection() {
   const layersRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const layers = layersRef.current?.querySelectorAll(".arch-layer");
-    if (!layers) return;
+    const container = layersRef.current;
+    if (!container) return;
 
-    const tweens: gsap.core.Tween[] = [];
+    const layers = container.querySelectorAll(".arch-layer");
+    if (layers.length === 0) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      gsap.set(layers, { opacity: 1, x: 0 });
+      return;
+    }
 
     layers.forEach((layer, i) => {
       gsap.set(layer, { x: i % 2 === 0 ? -30 : 30, opacity: 0 });
-      const tween = gsap.to(layer, {
-        x: 0,
-        opacity: 1,
-        duration: 0.7,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: layer,
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
-      });
-      tweens.push(tween);
     });
 
-    return () => tweens.forEach(t => t.kill());
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: container,
+        start: "top 80%",
+        toggleActions: "play none none none",
+      }
+    });
+
+    tl.to(layers, {
+      x: 0,
+      opacity: 1,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: "power2.out",
+    });
+
+    return () => {
+      tl.kill();
+      if (tl.scrollTrigger) tl.scrollTrigger.kill();
+    };
   }, []);
 
   return (
@@ -841,9 +872,9 @@ const STEPS = [
   {
     num: "01",
     icon: Upload,
-    title: "Ingest Sales CSV Data",
-    description: "Export transaction history from QuickBooks, Shopify, or Excel. Drag and drop the messy CSV into our dashboard mapping console.",
-    detail: "Supports custom headers automatically.",
+    title: "Streamed Data Ingestion",
+    description: "Upload sales ledger logs. The UI parses and maps arbitrary header columns to standardized application DTO contract schemas.",
+    detail: "Custom CSV schema mapper",
     color: "var(--color-primary)",
     borderColor: "border-primary/30",
     bgColor: "bg-primary/5",
@@ -851,9 +882,9 @@ const STEPS = [
   {
     num: "02",
     icon: Brain,
-    title: "AI Decomposes Seasonal Trends",
-    description: "The ML.NET engine isolates trends, seasonality, and transactional noise patterns using Singular Spectrum Analysis algorithms.",
-    detail: "Trained on your real-world local sales data.",
+    title: "Univariate Model Fitting",
+    description: "The background process dispatches the dataset to the C# ML.NET training engine, isolating seasonality, noise, and cyclic trends.",
+    detail: "Singular Spectrum Analysis (SSA)",
     color: "var(--color-secondary)",
     borderColor: "border-secondary/30",
     bgColor: "bg-secondary/5",
@@ -861,9 +892,9 @@ const STEPS = [
   {
     num: "03",
     icon: CheckCircle2,
-    title: "Extract Live Forecast Insights",
-    description: "Access 30-day demand predictions with confidence bounds. Obtain reorder points, timing dates, and dollar-at-risk indexes.",
-    detail: "Incorporates supplier lead time buffers.",
+    title: "Active Telemetry Display",
+    description: "The dashboard streams forecast nodes, upper/lower confidence boundaries, safety stock levels, and alert markers automatically.",
+    detail: "Dynamic SVG rendering & data projections",
     color: "var(--color-tertiary)",
     borderColor: "border-tertiary/30",
     bgColor: "bg-tertiary/5",
@@ -874,28 +905,40 @@ export function HowItWorksSection() {
   const stepsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const steps = stepsRef.current?.querySelectorAll(".step-card");
-    if (!steps) return;
+    const container = stepsRef.current;
+    if (!container) return;
 
-    const tweens: gsap.core.Tween[] = [];
+    const steps = container.querySelectorAll(".step-card");
+    if (steps.length === 0) return;
 
-    steps.forEach((step) => {
-      gsap.set(step, { y: 40, opacity: 0 });
-      const tween = gsap.to(step, {
-        y: 0,
-        opacity: 1,
-        duration: 0.7,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: step,
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
-      });
-      tweens.push(tween);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      gsap.set(steps, { opacity: 1, y: 0 });
+      return;
+    }
+
+    gsap.set(steps, { y: 30, opacity: 0 });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: container,
+        start: "top 85%",
+        toggleActions: "play none none none",
+      }
     });
 
-    return () => tweens.forEach(t => t.kill());
+    tl.to(steps, {
+      y: 0,
+      opacity: 1,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: "power2.out",
+    });
+
+    return () => {
+      tl.kill();
+      if (tl.scrollTrigger) tl.scrollTrigger.kill();
+    };
   }, []);
 
   return (
@@ -905,13 +948,13 @@ export function HowItWorksSection() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 rounded-full bg-secondary/15 border border-secondary/30 text-secondary text-xs font-bold mb-6">
-            Ingestion Flow
+            Data Pipeline
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-on-surface mb-6 tracking-tight">
-            From Messy CSV to Active Forecast in 3 Steps
+            The Automated Data Ingestion & Model Training Flow
           </h2>
           <p className="text-base text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-            No expensive consultants, database schema migrations, or engineering workshops. Build your first forecast dashboard before your coffee cools.
+            A streamlined asynchronous pipeline parses uploaded transactional records, feeds them to the C# machine learning service, and projects live telemetry on the dashboard.
           </p>
         </div>
 
@@ -942,26 +985,6 @@ export function HowItWorksSection() {
 // ─── 8. CTA Section
 // ────────────────────────────────────────────────────────────────────────────
 export function CTASection() {
-  const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    business: "",
-    email: "",
-    skuCount: "",
-    painPoint: "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
   return (
     <section id="cta" className="relative py-24 lg:py-32 bg-background border-t border-outline-variant/30">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(78,222,163,0.03)_0%,transparent_50%)] pointer-events-none" />
@@ -969,24 +992,24 @@ export function CTASection() {
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* Pitch info */}
+          {/* Portfolio Case Study Detail Column */}
           <div>
             <span className="inline-block px-4 py-1.5 rounded-full bg-secondary/15 border border-secondary/30 text-secondary text-xs font-bold mb-6">
-              Founding User Program
+              Engineering Case Study
             </span>
             <h2 className="text-3xl sm:text-4xl font-black text-on-surface mb-6 tracking-tight">
-              Shape the Future of Custom Supply Chain Analytics
+              An Advanced Full-Stack Systems Showcase
             </h2>
             <p className="text-sm sm:text-base text-on-surface-variant mb-8 leading-relaxed">
-              We are currently in a highly focused developer preview. We are seeking 10 small brands to use the platform <strong className="text-on-surface">completely free for 120 days</strong> in exchange for feedback. You get white-glove onboarding and direct support from the founder.
+              This project is built from the ground up as a clinical, high-performance systems engineering showcase. It demonstrates how to integrate advanced AI models, CQRS pipeline validation frameworks, and dynamic web user interfaces under one coherent architecture.
             </p>
 
             <div className="space-y-4 mb-8 text-sm">
               {[
-                "120 days completely free — no billing card required",
-                "Dedicated data setup call to map your custom spreadsheets",
-                "Direct line to the builder for pipeline requests",
-                "Help configure features to match your exact inventory flows"
+                "Clean Architecture boundaries with 100% separated business layers",
+                "Singular Spectrum Analysis (SSA) for robust univariate AI forecasting",
+                "High-volume streamed CSV ingestion with active field-mapping controls",
+                "Integrated JWT authentication checks and automated DB seeding scripts"
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-secondary text-sm mt-0.5">check_circle</span>
@@ -997,110 +1020,57 @@ export function CTASection() {
 
             <div className="p-6 rounded-2xl bg-surface-container border border-outline-variant/30 text-xs flex gap-4">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
-                <Briefcase className="w-5 h-5" />
+                <Briefcase className="w-5 h-5" strokeWidth={1.5} />
               </div>
               <div className="space-y-1">
-                <p className="text-on-surface font-bold">Hiring Managers & Builders</p>
+                <p className="text-on-surface font-bold">Hiring Managers & Engineering Teams</p>
                 <p className="text-on-surface-variant leading-relaxed">
-                  I built this system to showcase deep vertical architecture—Clean Architecture, robust MediatR pipelines, custom CSV stream parsers, and custom model training endpoints in C#.
+                  I engineered this system to showcase deep vertical capabilities—handling advanced database schemas, robust MediatR pipelines, custom CSV stream parsers, and custom model training endpoints in C#.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Request Form */}
+          {/* Interactive Sandbox Guide Column */}
           <div>
-            {!submitted ? (
-              <form onSubmit={handleSubmit} className="p-8 rounded-3xl bg-surface-container border border-outline-variant/30 space-y-5">
-                <h3 className="text-lg font-bold text-on-surface">Request Early Dev Preview Access</h3>
-
-                <div className="space-y-sm">
-                  <label className="text-xs font-bold text-on-surface-variant pl-1">Your Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full bg-surface-container-highest border border-outline-variant text-on-surface rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-primary outline-none"
-                    placeholder="Jane Smith"
-                  />
+            <div className="p-8 rounded-3xl bg-surface-container border border-outline-variant/30 space-y-6 shadow-xl backdrop-blur-md relative overflow-hidden">
+              <div className="absolute inset-x-0 -top-px h-[2px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+              
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                  <span className="material-symbols-outlined text-[24px]">terminal</span>
                 </div>
-
-                <div className="space-y-sm">
-                  <label className="text-xs font-bold text-on-surface-variant pl-1">Business Name</label>
-                  <input
-                    type="text"
-                    name="business"
-                    required
-                    value={formData.business}
-                    onChange={handleChange}
-                    className="w-full bg-surface-container-highest border border-outline-variant text-on-surface rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-primary outline-none"
-                    placeholder="Acme Flour Co."
-                  />
-                </div>
-
-                <div className="space-y-sm">
-                  <label className="text-xs font-bold text-on-surface-variant pl-1">Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full bg-surface-container-highest border border-outline-variant text-on-surface rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-primary outline-none"
-                    placeholder="jane@acmeflour.com"
-                  />
-                </div>
-
-                <div className="space-y-sm">
-                  <label className="text-xs font-bold text-on-surface-variant pl-1">Approximate SKU Count</label>
-                  <select
-                    name="skuCount"
-                    required
-                    value={formData.skuCount}
-                    onChange={handleChange}
-                    className="w-full bg-surface-container-highest border border-outline-variant text-on-surface rounded-xl p-3 text-xs focus:ring-2 focus:ring-primary outline-none cursor-pointer"
-                  >
-                    <option value="">Select SKU range...</option>
-                    <option value="under-50">Under 50 SKUs</option>
-                    <option value="50-500">50 – 500 SKUs</option>
-                    <option value="500-5000">500 – 5,000 SKUs</option>
-                    <option value="5000+">5,000+ SKUs</option>
-                  </select>
-                </div>
-
-                <div className="space-y-sm">
-                  <label className="text-xs font-bold text-on-surface-variant pl-1">Inventory Pain Point</label>
-                  <textarea
-                    name="painPoint"
-                    rows={2}
-                    value={formData.painPoint}
-                    onChange={handleChange}
-                    className="w-full bg-surface-container-highest border border-outline-variant text-on-surface rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-primary outline-none resize-none"
-                    placeholder="We manually check Shopify and over-order flour every spring..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3.5 px-4 font-bold text-on-primary bg-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl shadow-lg hover:shadow-primary/10 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  Request Free Entry
-                </button>
-              </form>
-            ) : (
-              <div className="p-8 rounded-3xl bg-secondary/10 border border-secondary/20 text-center space-y-md">
-                <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center mx-auto text-secondary">
-                  <span className="material-symbols-outlined text-[28px]">check_circle</span>
-                </div>
-                <h3 className="text-xl font-bold text-on-surface">Application Received!</h3>
+                <h3 className="text-lg font-bold text-on-surface">Explore the Live Sandbox Terminal</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Thank you for applying. I will personally review your submission and email onboarding coordinates within 24 hours. Let's make inventory errors history!
+                  The entire system is active and connected to a live local database and ML.NET forecasting service. You can instantly sign up for beta access to obtain a 120-day sandbox key or review the raw source code.
                 </p>
               </div>
-            )}
+
+              <div className="space-y-4 pt-2">
+                <a
+                  href="/dashboard"
+                  className="group w-full py-4 px-4 font-bold text-on-primary bg-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl shadow-lg hover:shadow-primary/15 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+                  Launch Interactive Sandbox
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </a>
+
+                <a
+                  href="https://github.com/austinchima/MySupplyChain"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 px-4 font-semibold text-on-surface border border-outline-variant/60 hover:border-secondary hover:text-secondary rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <GithubIcon className="w-4 h-4" />
+                  Browse GitHub Repository
+                </a>
+              </div>
+
+              <div className="text-[10px] text-outline/80 text-center leading-relaxed font-mono mt-4 pt-4 border-t border-outline-variant/15">
+                SHOWCASE PROJECT · C# .NET 10 · REACT 19 · POSTGRESQL · ML.NET
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1130,13 +1100,13 @@ export function FooterSection() {
               <span className="text-base font-bold text-on-surface">MySupplyChain</span>
             </div>
             <p className="text-xs text-on-surface-variant leading-relaxed">
-              Clean Architecture, MediatR CQRS pipelines, and ML.NET demand forecasting for growing SMBs. Engineered with precision.
+              Clean Architecture, MediatR CQRS pipelines, and ML.NET time-series demand forecasting systems showcase. Engineered with absolute precision.
             </p>
           </div>
 
           {/* Links */}
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-on-surface uppercase tracking-widest">Platform</h4>
+            <h4 className="text-xs font-bold text-on-surface uppercase tracking-widest">Case Study</h4>
             <ul className="space-y-2 text-xs">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>

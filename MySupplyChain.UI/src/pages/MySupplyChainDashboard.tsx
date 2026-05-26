@@ -75,7 +75,7 @@ export default function Dashboard() {
               <h3 className="text-base font-semibold text-on-surface px-xs">
                 Reorder Alerts
               </h3>
-              <div className="bg-surface rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+              <div className="glass-card rounded-2xl overflow-hidden shadow-sm">
                 {loading ? (
                   <div className="p-md text-center text-sm text-on-surface-variant">
                     <span className="material-symbols-outlined text-[20px] animate-spin mr-2 align-middle">
@@ -142,7 +142,7 @@ export default function Dashboard() {
                   Low Stock Products
                 </h3>
               </div>
-              <div className="bg-surface rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+              <div className="glass-card rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>

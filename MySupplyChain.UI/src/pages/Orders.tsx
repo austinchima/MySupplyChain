@@ -114,7 +114,7 @@ export default function Orders() {
           {summaryStats.map((stat) => (
             <div
               key={stat.label}
-              className="bg-surface rounded-xl border border-outline-variant p-md flex items-center gap-md hover:shadow-lg transition-shadow duration-300"
+              className="glass-card rounded-2xl p-md flex items-center gap-md shadow-sm"
             >
               <div className="w-12 h-12 rounded-xl bg-primary-container/20 flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-primary text-[24px]">
@@ -130,7 +130,7 @@ export default function Orders() {
         </div>
 
         {/* ── Orders Table ── */}
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+        <div className="glass-card rounded-2xl overflow-hidden shadow-sm">
           <div className="px-md py-sm border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
             <p className="text-xs font-semibold text-on-surface-variant tracking-wider">
               {loading ? "Loading..." : `Showing ${data.length} orders`}
@@ -172,12 +172,12 @@ export default function Orders() {
                 ) : (
                   data.map((order) => (
                     <tr key={order.id} className="hover:bg-surface-container transition-colors duration-150 group">
-                      <td className="px-md py-sm text-sm font-medium text-primary whitespace-nowrap">{order.orderNumber}</td>
-                      <td className="px-md py-sm text-sm text-on-surface-variant whitespace-nowrap">{order.date}</td>
+                      <td className="px-md py-sm text-sm font-medium text-primary whitespace-nowrap font-mono">{order.orderNumber}</td>
+                      <td className="px-md py-sm text-sm text-on-surface-variant whitespace-nowrap font-mono">{order.date}</td>
                       <td className="px-md py-sm text-sm text-on-surface font-medium">{order.customer}</td>
-                      <td className="px-md py-sm text-sm text-on-surface-variant text-center tabular-nums">{order.items}</td>
+                      <td className="px-md py-sm text-sm text-on-surface-variant text-center font-mono">{order.items}</td>
                       <td className="px-md py-sm"><StatusBadge variant={statusVariant(order.status)} /></td>
-                      <td className="px-md py-sm text-sm text-on-surface text-right font-medium tabular-nums">{order.total}</td>
+                      <td className="px-md py-sm text-sm text-on-surface text-right font-medium font-mono">{order.total}</td>
                       <td className="px-md py-sm text-right">
                         <button className="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1">
                           <span className="material-symbols-outlined text-[20px]">more_vert</span>

@@ -50,10 +50,10 @@ export default function SummaryCard({
 
   return (
     <div
-      className={`rounded-xl border p-md flex flex-col justify-between hover:shadow-lg transition-shadow duration-300 relative overflow-hidden group ${
+      className={`rounded-xl p-md flex flex-col justify-between relative overflow-hidden group ${
         isErrorCard
-          ? "bg-[#2f1115] border-error/30 shadow-[0_4px_20px_rgba(255,180,171,0.05)]"
-          : "bg-surface border-outline-variant"
+          ? "bg-[#2f1115] border border-error/30 shadow-[0_4px_20px_rgba(255,180,171,0.05)]"
+          : "glass-card"
       }`}
     >
       <div className="flex justify-between items-start mb-sm">
@@ -77,7 +77,7 @@ export default function SummaryCard({
 
       <div className="flex items-end justify-between z-10">
         <span
-          className={`text-[32px] leading-10 font-bold tracking-tight ${
+          className={`text-[32px] leading-10 font-bold tracking-tight font-mono ${
             isErrorCard ? "text-error" : "text-on-surface"
           }`}
         >

@@ -110,7 +110,7 @@ export default function ProductInventoryList() {
         )}
 
         {/* ── Data Table Card ── */}
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+        <div className="glass-card rounded-2xl overflow-hidden shadow-sm">
           {/* Table Controls */}
           <div className="px-md py-sm border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
             <p className="text-xs font-semibold text-on-surface-variant tracking-wider">
@@ -182,17 +182,17 @@ export default function ProductInventoryList() {
                         <td className="px-md py-sm text-base font-semibold text-on-surface">
                           {item.name}
                         </td>
-                        <td className="px-md py-sm text-sm text-on-surface-variant text-right tabular-nums">
+                        <td className="px-md py-sm text-sm text-on-surface-variant text-right font-mono tabular-nums">
                           ${item.price.toFixed(2)}
                         </td>
                         <td
-                          className={`px-md py-sm text-sm text-right tabular-nums ${
+                          className={`px-md py-sm text-sm text-right font-mono tabular-nums ${
                             isLow || isOut ? "text-error font-bold" : "text-on-surface"
                           }`}
                         >
                           {item.currentStock.toLocaleString()}
                         </td>
-                        <td className="px-md py-sm text-sm text-on-surface-variant text-right tabular-nums">
+                        <td className="px-md py-sm text-sm text-on-surface-variant text-right font-mono tabular-nums">
                           {item.reorderPoint.toLocaleString()}
                         </td>
                         <td className="px-md py-sm text-center">

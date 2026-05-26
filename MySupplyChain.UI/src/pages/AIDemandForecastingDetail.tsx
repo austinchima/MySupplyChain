@@ -150,7 +150,7 @@ export default function AIDemandForecastingDetail() {
         )}
 
         {/* ── Hero: Forecast Chart ── */}
-        <section className="bg-[#16191E] rounded-xl border border-outline-variant p-md flex flex-col min-h-[400px]">
+        <section className="glass-card rounded-2xl p-md flex flex-col min-h-[400px]">
           <div className="flex justify-between items-center mb-md">
             <h3 className="text-lg font-semibold text-on-surface flex items-center gap-sm">
               <span className="material-symbols-outlined text-primary filled">
@@ -207,7 +207,7 @@ export default function AIDemandForecastingDetail() {
         {/* ── Bottom Split Columns ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-md md:gap-lg">
           {/* Inventory Metrics */}
-          <section className="bg-[#16191E] rounded-xl border border-outline-variant p-md flex flex-col gap-md">
+          <section className="glass-card rounded-2xl p-md flex flex-col gap-md">
             <div className="flex justify-between items-start">
               <h3 className="text-base font-semibold text-on-surface">Current Inventory Metrics</h3>
               {selectedProduct && (
@@ -254,7 +254,7 @@ export default function AIDemandForecastingDetail() {
           </section>
 
           {/* Quick Actions */}
-          <section className="bg-[#16191E] rounded-xl border border-outline-variant p-md flex flex-col justify-between">
+          <section className="glass-card rounded-2xl p-md flex flex-col justify-between">
             <div>
               <h3 className="text-base font-semibold text-on-surface mb-sm">Quick Actions</h3>
               <p className="text-sm text-outline mb-md">

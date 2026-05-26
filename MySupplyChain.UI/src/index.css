@@ -60,11 +60,15 @@
   --spacing-base: 4px;
   --spacing-lg: 24px;
   --spacing-margin-mobile: 16px;
+
+  /* ── Typography Variables ── */
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-mono: "Fira Code", "Courier New", monospace;
 }
 
 /* ── Global Typography ── */
 body {
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -117,3 +121,79 @@ body {
   font-size: 11px;
   font-family: "Outfit", sans-serif;
 }
+
+/* ── Premium UI/UX Polish Utility Classes ── */
+
+/* Glassmorphism Container Card */
+.glass-card {
+  background: rgba(30, 32, 36, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(175, 198, 255, 0.15);
+  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Neon Glow Accents */
+.neon-glow-primary {
+  box-shadow: 0 0 25px -5px rgba(175, 198, 255, 0.15);
+}
+
+.neon-glow-secondary {
+  box-shadow: 0 0 25px -5px rgba(78, 222, 163, 0.12);
+}
+
+/* Gradient Text Fill */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Precise Corporate Headings */
+.header-title {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+/* Clean Technical Labels */
+.label-technical {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Highly Interactive Glowing Form Fields */
+.input-glow {
+  background: rgba(22, 24, 28, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.input-glow:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(175, 198, 255, 0.12);
+  outline: none;
+}
+
+/* Floating Aura Micro-animation */
+@keyframes floatGlow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-15px) scale(1.03); }
+}
+
+.glow-aura-pulse {
+  animation: floatGlow 10s infinite ease-in-out;
+}
+
