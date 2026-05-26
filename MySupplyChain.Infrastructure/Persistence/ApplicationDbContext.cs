@@ -15,6 +15,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SalesHistory> SalesHistories => Set<SalesHistory>();
     public DbSet<ReorderRequest> ReorderRequests => Set<ReorderRequest>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Customer> Customers => Set<Customer>();
     // User DbSet is inherited from IdentityDbContext
 
@@ -73,51 +74,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // SEED DATA
         var staticDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        modelBuilder.Entity<Product>().HasData(
-            new Product
-            {
-                Id = 1,
-                Name = "Laptop Dell XPS 13",
-                Sku = "DELL-XPS-001",
-                CurrentStock = 50,
-                ReorderPoint = 15,
-                Price = 1299.99m,
-                CreatedAt = staticDate
-            },
-            new Product
-            {
-                Id = 2,
-                Name = "iPhone 15 Pro",
-                Sku = "APPL-IP15-001",
-                CurrentStock = 30,
-                ReorderPoint = 10,
-                Price = 999.99m,
-                CreatedAt = staticDate
-            },
-            new Product
-            {
-                Id = 3,
-                Name = "Wireless Mouse",
-                Sku = "LOGI-MX-001",
-                CurrentStock = 100,
-                ReorderPoint = 25,
-                Price = 79.99m,
-                CreatedAt = staticDate
-            }
-        );
-
-        // Seed historical sales data (simplified for deterministic seeding)
-        modelBuilder.Entity<SalesHistory>().HasData(
-            new SalesHistory { Id = 1001, ProductId = 1, Sku = "DELL-XPS-001", Date = new DateTime(2024, 1, 1), QuantitySold = 10, CreatedAt = staticDate },
-            new SalesHistory { Id = 1002, ProductId = 1, Sku = "DELL-XPS-001", Date = new DateTime(2024, 1, 2), QuantitySold = 8, CreatedAt = staticDate },
-            new SalesHistory { Id = 1003, ProductId = 1, Sku = "DELL-XPS-001", Date = new DateTime(2024, 1, 3), QuantitySold = 12, CreatedAt = staticDate },
-            new SalesHistory { Id = 2001, ProductId = 2, Sku = "APPL-IP15-001", Date = new DateTime(2024, 1, 1), QuantitySold = 15, CreatedAt = staticDate },
-            new SalesHistory { Id = 2002, ProductId = 2, Sku = "APPL-IP15-001", Date = new DateTime(2024, 1, 2), QuantitySold = 12, CreatedAt = staticDate },
-            new SalesHistory { Id = 2003, ProductId = 2, Sku = "APPL-IP15-001", Date = new DateTime(2024, 1, 3), QuantitySold = 18, CreatedAt = staticDate },
-            new SalesHistory { Id = 3001, ProductId = 3, Sku = "LOGI-MX-001", Date = new DateTime(2024, 1, 1), QuantitySold = 45, CreatedAt = staticDate },
-            new SalesHistory { Id = 3002, ProductId = 3, Sku = "LOGI-MX-001", Date = new DateTime(2024, 1, 2), QuantitySold = 52, CreatedAt = staticDate },
-            new SalesHistory { Id = 3003, ProductId = 3, Sku = "LOGI-MX-001", Date = new DateTime(2024, 1, 3), QuantitySold = 38, CreatedAt = staticDate }
-        );
 
         // Seed default users with real password hashes
         // IDs must be strings for IdentityUser

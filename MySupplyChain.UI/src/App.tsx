@@ -16,14 +16,12 @@ interface LoginGateProps {
   setPassword: (v: string) => void;
   error: string | null;
   setError: (v: string | null) => void;
-  handleManualLogin: (e: React.FormEvent) => void;
+  handleSandboxLogin: () => void;
 }
 
 function LoginGate({
-  setUsernameOrEmail,
-  setPassword,
   error,
-  handleManualLogin
+  handleSandboxLogin
 }: LoginGateProps) {
   return (
     <div className="min-h-screen bg-[#0c0e12] flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
@@ -79,9 +77,8 @@ function LoginGate({
           <button
             type="button"
             onClick={(e) => {
-              setUsernameOrEmail("admin");
-              setPassword("Admin@123");
-              handleManualLogin(e);
+              e.preventDefault();
+              handleSandboxLogin();
             }}
             className="w-full bg-gradient-to-r from-primary to-[#85abff] hover:from-[#c2d5ff] hover:to-[#afc6ff] text-on-primary-container font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(175,198,255,0.15)] hover:shadow-[0_4px_25px_rgba(175,198,255,0.3)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
           >
@@ -145,14 +142,10 @@ function App() {
     initAuth();
   }, []);
 
-  const handleManualLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!usernameOrEmail || !password) {
-      setError("Please fill in both fields.");
-      return;
-    }
+  const handleSandboxLogin = async () => {
+    setError(null);
     setLoading(true);
-    await attemptLogin({ usernameOrEmail, password });
+    await attemptLogin({ usernameOrEmail: "admin", password: "Admin@123" });
     setLoading(false);
   };
 
@@ -193,7 +186,7 @@ function App() {
     setPassword,
     error,
     setError,
-    handleManualLogin
+    handleSandboxLogin
   };
 
   return (

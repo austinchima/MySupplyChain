@@ -99,22 +99,73 @@ public partial class DemandForecaster : IDemandForecaster
         }
     }
 
-    /// <summary>
-    /// Builds a simple moving average fallback when the SSA model is not available
-    /// </summary>
     private ForecastResult BuildFallbackForecast(int productId, List<float> salesList, int horizon)
     {
-        var avg = salesList.Count != 0 ? salesList.Average() : 0f;
-        var stdDev = salesList.Count > 1
-            ? MathF.Sqrt(salesList.Select(s => MathF.Pow(s - avg, 2)).Average())
-            : avg * 0.2f;
-
         if (_logger.IsEnabled(LogLevel.Warning))
             LogFallbackForecast(productId, salesList.Count);
 
-        var forecasted = Enumerable.Repeat(MathF.Max(0, avg), horizon).ToArray();
-        var lower = Enumerable.Repeat(MathF.Max(0, avg - 1.96f * stdDev), horizon).ToArray();
-        var upper = Enumerable.Repeat(avg + 1.96f * stdDev, horizon).ToArray();
+        var forecasted = new float[horizon];
+        var lower = new float[horizon];
+        var upper = new float[horizon];
+
+        if (salesList.Count < 2)
+        {
+            // If 0 or 1 data point, we can only return a flat line of that point (or 0)
+            float val = salesList.Count == 1 ? salesList[0] : 0f;
+            for (int i = 0; i < horizon; i++)
+            {
+                forecasted[i] = val;
+                lower[i] = MathF.Max(0, val - val * 0.2f);
+                upper[i] = val + val * 0.2f;
+            }
+            return new ForecastResult
+            {
+                ForecastedUnits = forecasted, LowerBound = lower, UpperBound = upper, Rmse = 0, Mae = 0
+            };
+        }
+
+        // Use Linear Regression to find the real trend line for sparse data
+        int n = salesList.Count;
+        float sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        
+        for (int i = 0; i < n; i++)
+        {
+            sumX += i;
+            sumY += salesList[i];
+            sumXY += i * salesList[i];
+            sumX2 += i * i;
+        }
+
+        float slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        float intercept = (sumY - slope * sumX) / n;
+
+        // Calculate standard deviation of the residuals for confidence intervals
+        float sumSquaredResiduals = 0;
+        float sumAbsResiduals = 0;
+        for (int i = 0; i < n; i++)
+        {
+            float predicted = slope * i + intercept;
+            float residual = salesList[i] - predicted;
+            sumSquaredResiduals += residual * residual;
+            sumAbsResiduals += MathF.Abs(residual);
+        }
+        
+        float stdDev = MathF.Sqrt(sumSquaredResiduals / n);
+        float mae = sumAbsResiduals / n;
+
+        for (int i = 0; i < horizon; i++)
+        {
+            // Project the trend line into the future (starting from x = n)
+            float projectedX = n + i;
+            float trendValue = slope * projectedX + intercept;
+            
+            // Demand can't be negative
+            float baseValue = MathF.Max(0, trendValue);
+            
+            forecasted[i] = baseValue;
+            lower[i] = MathF.Max(0, baseValue - 1.96f * stdDev);
+            upper[i] = baseValue + 1.96f * stdDev;
+        }
 
         return new ForecastResult
         {
@@ -122,9 +173,7 @@ public partial class DemandForecaster : IDemandForecaster
             LowerBound = lower,
             UpperBound = upper,
             Rmse = stdDev,
-            Mae = salesList.Count > 1
-                ? salesList.Select(s => MathF.Abs(s - avg)).Average()
-                : 0f
+            Mae = mae
         };
     }
 

@@ -3,6 +3,7 @@ using Microsoft.OpenApi;
 using MySupplyChain.API.Middleware;
 using MySupplyChain.Application;
 using MySupplyChain.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 
@@ -122,6 +123,29 @@ try
     builder.Services.AddTransient<GlobalExceptionHandlerMiddleware>();
 
     var app = builder.Build();
+
+    // ─── Seed Database ─────────────────────────────────────────────────────────
+    if (!IsIntegrationTestRun)
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            try
+            {
+                var context = services.GetRequiredService<MySupplyChain.Infrastructure.Persistence.ApplicationDbContext>();
+                await context.Database.MigrateAsync();
+
+                var seederLogger = services.GetRequiredService<ILogger<Program>>();
+                var csvPath = Path.Combine(app.Environment.ContentRootPath, "..", "data", "Retail-Supply-Chain-Sales-Dataset.csv");
+                await MySupplyChain.Infrastructure.Persistence.CsvDatabaseSeeder.SeedAsync(context, csvPath, seederLogger);
+            }
+            catch (Exception ex)
+            {
+                var seederLogger = services.GetRequiredService<ILogger<Program>>();
+                seederLogger.LogError(ex, "An error occurred while seeding the database.");
+            }
+        }
+    }
 
     // ─── Middleware pipeline ───────────────────────────────────────────────────
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
