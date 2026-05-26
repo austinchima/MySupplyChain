@@ -15,11 +15,6 @@ const mainNavItems: NavItem[] = [
   { to: "/orders", icon: "receipt_long", label: "Orders" },
 ];
 
-const footerNavItems: NavItem[] = [
-  { to: "#", icon: "contact_support", label: "Support" },
-  { to: "#", icon: "manage_accounts", label: "Account Settings" },
-];
-
 function SidebarLink({ to, icon, label }: NavItem) {
   return (
     <NavLink
