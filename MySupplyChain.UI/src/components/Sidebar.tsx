@@ -101,6 +101,16 @@ export default function Sidebar() {
                 {item.label}
               </a>
             ))}
+            <button
+              onClick={() => {
+                localStorage.removeItem("supplychain_jwt");
+                window.location.reload();
+              }}
+              className="w-[calc(100%-32px)] flex items-center gap-4 text-error mx-md px-md py-sm rounded-full hover:bg-error/10 hover:text-error transition-colors duration-200 text-sm font-semibold tracking-wide cursor-pointer text-left"
+            >
+              <span className="material-symbols-outlined">logout</span>
+              Sign Out
+            </button>
           </div>
         </div>
       </aside>
