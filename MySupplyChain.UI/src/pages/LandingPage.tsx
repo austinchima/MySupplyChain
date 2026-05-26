@@ -201,7 +201,7 @@ export function Navbar() {
               href="/dashboard"
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-on-primary bg-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl shadow-md hover:shadow-primary/10 transition-all duration-200"
             >
-              Launch Sandbox
+              Check It Out
               <ArrowRight className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -244,7 +244,7 @@ export function Navbar() {
               href="/dashboard"
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-on-primary bg-primary rounded-xl text-center"
             >
-              Launch Sandbox
+              Check It Out
             </a>
           </div>
         </div>
@@ -364,7 +364,7 @@ export function HeroSection() {
                 href="/dashboard"
                 className="group flex items-center gap-2.5 px-8 py-4 text-sm font-bold text-on-primary bg-primary hover:bg-primary-container hover:text-on-primary-container rounded-2xl transition-all duration-300 shadow-lg hover:shadow-primary/15"
               >
-                Launch Sandbox Terminal
+                Check It Out
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </a>
               <a
@@ -1040,9 +1040,9 @@ export function CTASection() {
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                   <span className="material-symbols-outlined text-[24px]">terminal</span>
                 </div>
-                <h3 className="text-lg font-bold text-on-surface">Explore the Live Sandbox Terminal</h3>
+                <h3 className="text-lg font-bold text-on-surface">Explore the Live Terminal</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed">
-                  The entire system is active and connected to a live local database and ML.NET forecasting service. You can instantly sign up for beta access to obtain a 120-day sandbox key or review the raw source code.
+                  The entire system is active and connected to a live local database and ML.NET forecasting service. You can instantly sign up for beta access or review the raw source code.
                 </p>
               </div>
 
@@ -1052,7 +1052,7 @@ export function CTASection() {
                   className="group w-full py-4 px-4 font-bold text-on-primary bg-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl shadow-lg hover:shadow-primary/15 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
-                  Launch Interactive Sandbox
+                  Check It Out
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </a>
 

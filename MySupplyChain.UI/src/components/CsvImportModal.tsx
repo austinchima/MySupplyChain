@@ -169,7 +169,7 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
               <p className="font-bold text-on-surface text-base">Drag & drop your sales CSV here</p>
               <p className="text-xs text-on-surface-variant">or click to browse your computer</p>
             </div>
-            <p className="text-[10px] text-outline font-medium max-w-xs">
+            <p className="text-[10px] text-outline font-medium max-w-[280px]">
               Upload any raw spreadsheet from QuickBooks, Shopify, or Excel. We will map your headers in the next step.
             </p>
           </div>
