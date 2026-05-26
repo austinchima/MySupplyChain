@@ -1,15 +1,11 @@
-# ─── Render Infrastructure as Code ────────────────────────────────────────────
-# Deploy this project free on Render: https://render.com
-# Just connect your GitHub repo and Render will pick this file up automatically.
-
-services:
+databases:
   # ─── PostgreSQL Database (Free tier) ──────────────────────────────────────
-  - type: pserv
-    name: mysupplychain-db
+  - name: mysupplychain-db
     plan: free
     databaseName: mysupplychain
-    databaseUser: mysupplychain_user
+    user: mysupplychain_user
 
+services:
   # ─── .NET Web API ──────────────────────────────────────────────────────────
   - type: web
     name: mysupplychain-api
@@ -32,6 +28,6 @@ services:
         value: MySupplyChain.Client
       - key: JwtSettings__ExpiryMinutes
         value: "60"
-      # Set this after deploying your Vercel frontend:
+      # After deploying Vercel, add your frontend URL here:
       # - key: AllowedOrigins__0
       #   value: https://your-app.vercel.app
