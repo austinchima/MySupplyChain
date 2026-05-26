@@ -16,7 +16,10 @@ import type {
 } from "../types/api";
 
 // ─── Base URL (proxied via Vite in dev, direct in prod) ────────────────────
-const BASE = "/api";
+// In production (Vercel), VITE_API_BASE_URL is set to the Render backend URL
+// e.g. https://mysupplychain-api.onrender.com/api
+// In dev, Vite's proxy forwards /api → localhost:5001, so BASE stays as /api
+const BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 // ─── Generic fetch wrapper with JWT injection ──────────────────────────────
 

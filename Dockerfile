@@ -28,6 +28,9 @@ COPY --from=build /app/publish .
 # Copy pre-trained ML model if it exists
 COPY --from=build /src/MySupplyChain.Infrastructure/MLModels/ ./MLModels/
 
+# Copy CSV training/seed data so the seeder can run on startup
+COPY --from=build /src/data/ ../data/
+
 USER appuser
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080

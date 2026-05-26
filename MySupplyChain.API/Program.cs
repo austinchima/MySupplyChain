@@ -122,6 +122,21 @@ try
 
     builder.Services.AddTransient<GlobalExceptionHandlerMiddleware>();
 
+    // ─── CORS ─────────────────────────────────────────────────────────────────
+    // Reads allowed origins from config so local dev and production both work
+    var allowedOrigins = builder.Configuration
+        .GetSection("AllowedOrigins")
+        .Get<string[]>() ?? ["http://localhost:5173"];
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials());
+    });
+
     var app = builder.Build();
 
     // ─── Seed Database ─────────────────────────────────────────────────────────
@@ -167,16 +182,15 @@ try
         };
     });
 
-    if (app.Environment.IsDevelopment())
+    // Swagger always enabled — this is a portfolio demo app
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
     {
-        app.UseSwagger();
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "MySupplyChain API v1");
-            c.RoutePrefix = "swagger";
-        });
-    }
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "MySupplyChain API v1");
+        c.RoutePrefix = "swagger";
+    });
 
+    app.UseCors();
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
