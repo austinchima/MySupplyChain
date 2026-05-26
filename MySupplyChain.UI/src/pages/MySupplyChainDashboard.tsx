@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import Topbar from "../components/Topbar";
 import SummaryCard from "../components/SummaryCard";
 import StatusBadge from "../components/StatusBadge";
@@ -6,6 +7,8 @@ import { products as productsApi, reorderRequests as reorderApi } from "../lib/a
 import type { ProductDto, ReorderRequestDto } from "../types/api";
 
 export default function Dashboard() {
+  const { onOpenSupport, onOpenSettings } = useOutletContext<{ onOpenSupport: () => void, onOpenSettings: () => void }>();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [alerts, setAlerts] = useState<ReorderRequestDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +39,13 @@ export default function Dashboard() {
 
   return (
     <>
-      <Topbar title="Overview" showSearch searchPlaceholder="Search inventory, orders, or alerts..." />
+      <Topbar 
+        title="Overview" 
+        showSearch 
+        searchPlaceholder="Search inventory, orders, or alerts..." 
+        onOpenSupport={onOpenSupport}
+        onOpenSettings={onOpenSettings}
+      />
 
       <main className="flex-1 overflow-y-auto p-margin-desktop">
         <div className="max-w-[1600px] mx-auto space-y-lg">
@@ -95,6 +104,7 @@ export default function Dashboard() {
                     {alerts.slice(0, 5).map((alert) => (
                       <li
                         key={alert.id}
+                        onClick={() => navigate("/forecasting")}
                         className="p-md hover:bg-surface-container transition-colors flex gap-sm items-start cursor-pointer group"
                       >
                         <div className="mt-1 w-2 h-2 rounded-full bg-error shrink-0 shadow-[0_0_8px_rgba(255,180,171,0.6)]" />
@@ -103,20 +113,20 @@ export default function Dashboard() {
                             {alert.productName}
                           </p>
                           <div className="flex items-center gap-md mt-1">
-                            <span className="text-xs text-error">
+                            <span className="text-xs text-error font-bold">
                               Need: {alert.quantityToOrder.toLocaleString()}
                             </span>
-                            <span className="text-xs text-on-surface-variant">
+                            <span className="text-[11px] text-on-surface-variant">
                               Predicted Demand: {alert.predictedDemand.toLocaleString()}
                             </span>
                           </div>
                           {alert.justification && (
-                            <p className="text-[11px] text-on-surface-variant mt-1 italic">
+                            <p className="text-[10px] text-on-surface-variant mt-1 italic leading-relaxed">
                               {alert.justification}
                             </p>
                           )}
                         </div>
-                        <button className="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="text-on-surface-variant hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                           <span className="material-symbols-outlined text-[20px]">
                             arrow_forward
                           </span>
@@ -127,7 +137,10 @@ export default function Dashboard() {
                 )}
                 {alerts.length > 5 && (
                   <div className="p-sm border-t border-outline-variant/50 bg-surface-container-lowest">
-                    <button className="w-full py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => navigate("/forecasting")}
+                      className="w-full py-2 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
+                    >
                       View All {alerts.length} Alerts
                     </button>
                   </div>
@@ -141,6 +154,12 @@ export default function Dashboard() {
                 <h3 className="text-base font-semibold text-on-surface">
                   Low Stock Products
                 </h3>
+                <button 
+                  onClick={() => navigate("/inventory")}
+                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                >
+                  Manage Inventory
+                </button>
               </div>
               <div className="glass-card rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
@@ -174,7 +193,11 @@ export default function Dashboard() {
                           .filter((p) => p.healthStatus === "Low Stock")
                           .slice(0, 10)
                           .map((p) => (
-                            <tr key={p.id} className="hover:bg-surface-container transition-colors bg-error-container/5">
+                            <tr 
+                              key={p.id} 
+                              onClick={() => navigate("/inventory")}
+                              className="hover:bg-surface-container transition-colors bg-error-container/5 cursor-pointer"
+                            >
                               <td className="py-md px-md font-mono text-xs">{p.sku}</td>
                               <td className="py-md px-md font-medium">{p.name}</td>
                               <td className="py-md px-md text-right text-error font-bold tabular-nums">

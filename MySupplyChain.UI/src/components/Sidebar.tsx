@@ -47,7 +47,12 @@ function SidebarLink({ to, icon, label }: NavItem) {
   );
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  onOpenSupport: () => void;
+  onOpenSettings: () => void;
+}
+
+export default function Sidebar({ onOpenSupport, onOpenSettings }: SidebarProps) {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
 
   return (
@@ -75,7 +80,7 @@ export default function Sidebar() {
           <div className="px-md mb-md">
             <button
               onClick={() => setOrderModalOpen(true)}
-              className="w-full bg-primary text-on-primary py-2.5 px-md rounded-full font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-sm shadow-[0_2px_12px_rgba(175,198,255,0.15)]"
+              className="w-full bg-primary text-on-primary py-2.5 px-md rounded-full font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-sm shadow-[0_2px_12px_rgba(175,198,255,0.15)] cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
               Create New Order
@@ -91,16 +96,20 @@ export default function Sidebar() {
 
           {/* ── Footer Navigation ── */}
           <div className="mt-auto pt-md border-t border-outline-variant/30 space-y-1">
-            {footerNavItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.to}
-                className="flex items-center gap-4 text-on-surface-variant mx-md px-md py-sm rounded-full hover:bg-surface-container-highest transition-colors duration-200 text-sm font-semibold tracking-wide"
-              >
-                <span className="material-symbols-outlined">{item.icon}</span>
-                {item.label}
-              </a>
-            ))}
+            <button
+              onClick={onOpenSupport}
+              className="w-[calc(100%-32px)] flex items-center gap-4 text-on-surface-variant mx-md px-md py-sm rounded-full hover:bg-surface-container-highest transition-colors duration-200 text-sm font-semibold tracking-wide cursor-pointer text-left"
+            >
+              <span className="material-symbols-outlined">contact_support</span>
+              Support
+            </button>
+            <button
+              onClick={onOpenSettings}
+              className="w-[calc(100%-32px)] flex items-center gap-4 text-on-surface-variant mx-md px-md py-sm rounded-full hover:bg-surface-container-highest transition-colors duration-200 text-sm font-semibold tracking-wide cursor-pointer text-left"
+            >
+              <span className="material-symbols-outlined">manage_accounts</span>
+              Account Settings
+            </button>
             <button
               onClick={() => {
                 localStorage.removeItem("supplychain_jwt");

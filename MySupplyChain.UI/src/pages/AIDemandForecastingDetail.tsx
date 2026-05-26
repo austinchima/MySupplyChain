@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useOutletContext } from "react-router-dom";
 import Topbar from "../components/Topbar";
 import RestockModal from "../components/RestockModal";
 import { products as productsApi } from "../lib/api";
 import type { ProductDto, ProductForecastDto } from "../types/api";
 
 export default function AIDemandForecastingDetail() {
+  const { onOpenSupport, onOpenSettings } = useOutletContext<{ onOpenSupport: () => void, onOpenSettings: () => void }>();
   const [searchParams] = useSearchParams();
   const productIdParam = parseInt(searchParams.get("productId") ?? "0");
 
@@ -112,6 +113,8 @@ export default function AIDemandForecastingDetail() {
       <Topbar
         title="Demand Forecasting"
         subtitle={selectedProduct?.name}
+        onOpenSupport={onOpenSupport}
+        onOpenSettings={onOpenSettings}
       />
 
       <div className="flex-1 overflow-y-auto p-md md:p-lg space-y-md md:space-y-lg">
@@ -121,7 +124,7 @@ export default function AIDemandForecastingDetail() {
             Product:
           </label>
           <select
-            className="bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            className="bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer outline-none"
             value={selectedProductId}
             onChange={(e) => setSelectedProductId(parseInt(e.target.value))}
           >
@@ -143,7 +146,7 @@ export default function AIDemandForecastingDetail() {
           <div className="p-md bg-error-container/10 border border-error/30 rounded-xl text-sm text-error flex items-center gap-sm">
             <span className="material-symbols-outlined">error</span>
             {error}
-            <button onClick={fetchForecast} className="ml-auto text-xs font-semibold underline">
+            <button onClick={fetchForecast} className="ml-auto text-xs font-semibold underline cursor-pointer">
               Retry
             </button>
           </div>
@@ -257,7 +260,7 @@ export default function AIDemandForecastingDetail() {
           <section className="glass-card rounded-2xl p-md flex flex-col justify-between">
             <div>
               <h3 className="text-base font-semibold text-on-surface mb-sm">Quick Actions</h3>
-              <p className="text-sm text-outline mb-md">
+              <p className="text-sm text-outline mb-md leading-relaxed">
                 {forecast?.recommendation ?? "Select a product and generate a forecast to see AI recommendations."}
               </p>
               {forecast && (
@@ -277,15 +280,18 @@ export default function AIDemandForecastingDetail() {
               <button
                 onClick={() => setRestockOpen(true)}
                 disabled={!selectedProduct}
-                className="w-full bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container transition-colors duration-200 rounded py-sm px-md text-base font-semibold flex justify-center items-center gap-sm shadow-[0px_4px_20px_rgba(82,141,255,0.15)] disabled:opacity-50"
+                className="w-full bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container transition-colors duration-200 rounded-xl py-4 px-md text-base font-bold flex justify-center items-center gap-sm shadow-lg shadow-primary/20 disabled:opacity-50 cursor-pointer"
               >
                 <span className="material-symbols-outlined">add_shopping_cart</span>
                 Restock Now
               </button>
               <div className="grid grid-cols-2 gap-sm mt-xs">
-                <button className="w-full border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded py-sm px-sm text-xs font-semibold flex justify-center items-center gap-1">
+                <button 
+                  onClick={() => alert("Reorder point optimization feature coming soon!")}
+                  className="w-full border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-xl py-3 px-sm text-xs font-bold flex justify-center items-center gap-1 cursor-pointer"
+                >
                   <span className="material-symbols-outlined text-[18px]">tune</span>
-                  Adjust Reorder Point
+                  Adjust Reorder
                 </button>
                 <button
                   onClick={() => {
@@ -305,10 +311,10 @@ export default function AIDemandForecastingDetail() {
                     URL.revokeObjectURL(url);
                   }}
                   disabled={!forecast}
-                  className="w-full border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded py-sm px-sm text-xs font-semibold flex justify-center items-center gap-1 disabled:opacity-50"
+                  className="w-full border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-xl py-3 px-sm text-xs font-bold flex justify-center items-center gap-1 disabled:opacity-50 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[18px]">download</span>
-                  Export Forecast Data
+                  Export Data
                 </button>
               </div>
             </div>

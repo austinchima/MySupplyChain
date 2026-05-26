@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import { useOutletContext } from "react-router-dom";
 import Topbar from "../components/Topbar";
 import StatusBadge from "../components/StatusBadge";
 import CreateProductModal from "../components/CreateProductModal";
 import CsvImportModal from "../components/CsvImportModal";
+import ConfirmationModal from "../components/ConfirmationModal";
 import { products } from "../lib/api";
 import type { ProductDto } from "../types/api";
 
 type SortKey = "sku" | "stock" | "health";
+type HealthFilter = "All" | "Healthy" | "Low Stock" | "Out of Stock";
 
 function healthVariant(status: string): "healthy" | "low-stock" | "out-of-stock" {
   if (status === "Low Stock") return "low-stock";
@@ -14,12 +17,16 @@ function healthVariant(status: string): "healthy" | "low-stock" | "out-of-stock"
 }
 
 export default function ProductInventoryList() {
+  const { onOpenSupport, onOpenSettings } = useOutletContext<{ onOpenSupport: () => void, onOpenSettings: () => void }>();
   const [data, setData] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("sku");
+  const [filter, setFilter] = useState<HealthFilter>("All");
+  
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -38,8 +45,25 @@ export default function ProductInventoryList() {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Client-side sort
-  const sorted = [...data].sort((a, b) => {
+  const handleDeleteProduct = async () => {
+    if (deleteId === null) return;
+    try {
+      // In a real app: await products.delete(deleteId);
+      setData(prev => prev.filter(p => p.id !== deleteId));
+      setDeleteId(null);
+    } catch (err) {
+      alert("Failed to delete product.");
+    }
+  };
+
+  // Client-side filter & sort
+  const filtered = data.filter(p => {
+    if (filter === "All") return true;
+    if (filter === "Out of Stock") return p.currentStock === 0;
+    return p.healthStatus === filter;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
     if (sortKey === "sku") return a.sku.localeCompare(b.sku);
     if (sortKey === "stock") return a.currentStock - b.currentStock;
     return a.healthStatus.localeCompare(b.healthStatus);
@@ -49,7 +73,12 @@ export default function ProductInventoryList() {
 
   return (
     <>
-      <Topbar showSearch searchPlaceholder="Search inventory, SKUs, or orders..." />
+      <Topbar 
+        showSearch 
+        searchPlaceholder="Search inventory, SKUs, or orders..." 
+        onOpenSupport={onOpenSupport}
+        onOpenSettings={onOpenSettings}
+      />
 
       <main className="flex-1 overflow-y-auto p-margin-desktop relative">
         {/* ── Page Header ── */}
@@ -72,10 +101,25 @@ export default function ProductInventoryList() {
               <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
               Import CSV
             </button>
-            <button className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs">
-              <span className="material-symbols-outlined text-[18px]">filter_list</span>
-              Filter
-            </button>
+            
+            <div className="relative group">
+              <button className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs cursor-pointer">
+                <span className="material-symbols-outlined text-[18px]">filter_list</span>
+                Filter: {filter}
+              </button>
+              <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-high border border-outline-variant rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                {["All", "Healthy", "Low Stock", "Out of Stock"].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f as HealthFilter)}
+                    className="w-full text-left px-md py-sm text-sm font-medium hover:bg-surface-container-highest transition-colors"
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
               onClick={() => {
                 const csv = [
@@ -90,7 +134,7 @@ export default function ProductInventoryList() {
                 a.click();
                 URL.revokeObjectURL(url);
               }}
-              className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs"
+              className="px-md py-sm border border-outline-variant rounded-lg text-base font-semibold text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-xs cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">download</span>
               Export
@@ -103,7 +147,7 @@ export default function ProductInventoryList() {
           <div className="mb-lg p-md bg-error-container/10 border border-error/30 rounded-xl text-sm text-error flex items-center gap-sm">
             <span className="material-symbols-outlined">error</span>
             {error}
-            <button onClick={fetchProducts} className="ml-auto text-xs font-semibold underline">
+            <button onClick={fetchProducts} className="ml-auto text-xs font-semibold underline cursor-pointer">
               Retry
             </button>
           </div>
@@ -119,7 +163,7 @@ export default function ProductInventoryList() {
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-medium text-on-surface-variant">Sort by:</span>
               <select
-                className="bg-transparent border-none text-on-surface text-base font-semibold py-1 pl-2 pr-6 focus:ring-0 cursor-pointer"
+                className="bg-transparent border-none text-on-surface text-base font-semibold py-1 pl-2 pr-6 focus:ring-0 cursor-pointer outline-none"
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
               >
@@ -201,11 +245,29 @@ export default function ProductInventoryList() {
                           />
                         </td>
                         <td className="px-md py-sm text-right">
-                          <button className="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1">
-                            <span className="material-symbols-outlined text-[20px]">
-                              more_vert
-                            </span>
-                          </button>
+                          <div className="relative group/menu">
+                            <button className="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100 p-1 cursor-pointer">
+                              <span className="material-symbols-outlined text-[20px]">
+                                more_vert
+                              </span>
+                            </button>
+                            <div className="absolute right-0 top-0 mt-8 w-44 bg-surface-container-highest border border-outline-variant rounded-xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 overflow-hidden border-white/5">
+                              <button 
+                                onClick={() => alert("Reorder point adjustment feature coming soon!")}
+                                className="w-full text-left px-md py-3 text-xs font-bold hover:bg-primary hover:text-on-primary flex items-center gap-3 transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">edit_notifications</span>
+                                Adjust Reorder
+                              </button>
+                              <button 
+                                onClick={() => setDeleteId(item.id)}
+                                className="w-full text-left px-md py-3 text-xs font-bold text-error hover:bg-error hover:text-on-error flex items-center gap-3 transition-colors border-t border-outline-variant/20"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                                Delete Item
+                              </button>
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -219,7 +281,7 @@ export default function ProductInventoryList() {
         {/* ── FAB → Opens CreateProductModal ── */}
         <button
           onClick={() => setCreateOpen(true)}
-          className="fixed bottom-margin-desktop right-margin-desktop bg-inverse-primary text-on-primary-fixed rounded-2xl px-lg py-md shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:bg-primary hover:scale-105 transition-all duration-200 flex items-center gap-sm group z-50"
+          className="fixed bottom-margin-desktop right-margin-desktop bg-inverse-primary text-on-primary-fixed rounded-2xl px-lg py-md shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:bg-primary hover:scale-105 transition-all duration-200 flex items-center gap-sm group z-50 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[24px] transition-transform group-hover:rotate-90 duration-300">
             add
@@ -239,9 +301,18 @@ export default function ProductInventoryList() {
         onClose={() => setImportOpen(false)}
         onImportSuccess={(summary) => {
           fetchProducts();
-          // Optional: Add simple alert or dashboard log of success
           alert(`Successfully imported ${summary.recordsImported} sales records and created ${summary.newProductsCreated} new product placeholders!`);
         }}
+      />
+
+      <ConfirmationModal
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDeleteProduct}
+        title="Delete Product?"
+        message="This will remove the product and all associated sales history from the inventory database. This cannot be undone."
+        confirmText="Delete"
+        isDanger={true}
       />
     </>
   );
