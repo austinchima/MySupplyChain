@@ -45,7 +45,10 @@ export default function Orders() {
   }, []);
 
   useEffect(() => {
-    fetchOrders();
+    const timer = setTimeout(() => {
+      fetchOrders();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchOrders]);
 
   const handleDeleteOrder = async () => {
@@ -55,6 +58,7 @@ export default function Orders() {
       setData(prev => prev.filter(o => o.id !== deleteId));
       setDeleteId(null);
     } catch (err) {
+      console.error("Failed to delete order:", err);
       alert("Failed to delete order.");
     }
   };
@@ -64,6 +68,7 @@ export default function Orders() {
       await ordersApi.updateStatus(id, { id, status });
       fetchOrders();
     } catch (err) {
+      console.error("Failed to update status:", err);
       alert("Failed to update status.");
     }
   };
@@ -112,7 +117,7 @@ export default function Orders() {
                 <span className="material-symbols-outlined text-[20px]">filter_list</span>
                 Status: {filter}
               </button>
-              <div className="absolute right-0 top-full mt-2 w-52 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden border-white/5">
+              <div className="absolute right-0 top-full mt-2 w-52 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
                 {["All", "Processing", "Shipped", "Delivered", "Cancelled"].map(f => (
                   <button
                     key={f}
@@ -228,7 +233,7 @@ export default function Orders() {
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-md py-24 text-center text-sm text-on-surface-variant">
-                      <div className="max-w-md mx-auto space-y-3 px-md">
+                      <div className="max-w-sm mx-auto space-y-3 px-md">
                         <span className="material-symbols-outlined text-[48px] text-outline opacity-20">receipt_long</span>
                         <div className="space-y-1">
                           <p className="font-bold text-on-surface text-base">No orders found.</p>
@@ -253,7 +258,7 @@ export default function Orders() {
                           <button className="text-outline hover:text-primary transition-all p-1.5 rounded-lg hover:bg-surface-container-highest cursor-pointer">
                             <span className="material-symbols-outlined text-[20px]">more_horiz</span>
                           </button>
-                          <div className="absolute right-0 top-0 mt-8 w-48 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 overflow-hidden border-white/5">
+                          <div className="absolute right-0 top-0 mt-8 w-48 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 overflow-hidden">
                             <button 
                               onClick={() => setTrackOrder(order)}
                               className="w-full text-left px-md py-3.5 text-xs font-bold hover:bg-primary hover:text-on-primary flex items-center gap-3 transition-colors"

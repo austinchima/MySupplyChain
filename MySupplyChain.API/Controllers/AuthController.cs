@@ -81,4 +81,23 @@ public class AuthController(IMediator mediator) : ControllerBase
         await mediator.Send(new DeleteAccountCommand(userId));
         return NoContent();
     }
+
+    /// <summary>
+    /// Update user's username (display name)
+    /// </summary>
+    [Authorize]
+    [HttpPut("username")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult> UpdateUsername([FromBody] UpdateUsernameDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var token = await mediator.Send(new MySupplyChain.Application.Auth.Commands.UpdateUsername.UpdateUsernameCommand(userId, dto.NewUsername));
+        return Ok(new { Token = token, Message = "Username updated successfully" });
+    }
 }
+
+public record UpdateUsernameDto(string NewUsername);

@@ -2,42 +2,70 @@ import Modal from "./Modal";
 import { useState } from "react";
 import ConfirmationModal from "./ConfirmationModal";
 import { auth } from "../lib/api";
+import type { TokenUser } from "../lib/auth";
 
 interface AccountSettingsModalProps {
   open: boolean;
   onClose: () => void;
+  onDataReset?: () => void;
+  onUserUpdate?: () => void;
+  user: TokenUser | null;
 }
 
 export default function AccountSettingsModal({
   open,
   onClose,
+  onDataReset,
+  onUserUpdate,
+  user,
 }: AccountSettingsModalProps) {
   const [resetLedgerOpen, setResetLedgerOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Username edit states
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState(user?.username ?? "");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
+
+  const initials = user
+    ? user.username
+        .split(/[\s._-]+/)
+        .map((w) => w[0]?.toUpperCase() ?? "")
+        .slice(0, 2)
+        .join("") || user.email[0]?.toUpperCase() || "?"
+    : "?";
+
+  const roleBadge =
+    user?.role === "Admin" ? "System Administrator" : "Team Member";
 
   const handleResetLedger = async () => {
-    setIsProcessing(true);
-    try {
-      await auth.resetLedger();
-      window.location.reload();
-    } catch (err) {
-      alert("Failed to reset ledger.");
-    } finally {
-      setIsProcessing(false);
-    }
+    await auth.resetLedger();
+    onDataReset?.();
   };
 
   const handleDeleteAccount = async () => {
-    setIsProcessing(true);
+    await auth.deleteAccount();
+    localStorage.removeItem("supplychain_jwt");
+    window.location.reload();
+  };
+
+  const handleSaveUsername = async () => {
+    if (!newUsername.trim()) {
+      setUsernameError("Username cannot be empty");
+      return;
+    }
+    setIsSavingUsername(true);
+    setUsernameError(null);
     try {
-      await auth.deleteAccount();
-      localStorage.removeItem("supplychain_jwt");
-      window.location.reload();
+      const res = await auth.updateUsername(newUsername);
+      localStorage.setItem("supplychain_jwt", res.token);
+      onUserUpdate?.();
+      setIsEditingUsername(false);
     } catch (err) {
-      alert("Failed to delete account.");
+      setUsernameError(err instanceof Error ? err.message : "Failed to update username");
     } finally {
-      setIsProcessing(false);
+      setIsSavingUsername(false);
     }
   };
 
@@ -48,15 +76,70 @@ export default function AccountSettingsModal({
           {/* Profile Section */}
           <div className="flex items-center gap-md p-md bg-surface-container-low rounded-2xl border border-outline-variant/30">
             <div className="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xl font-bold border border-primary/20 shadow-sm">
-              AC
+              {initials}
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-on-surface">Austin Chima</h3>
-              <p className="text-sm text-on-surface-variant font-medium">austinchima515@gmail.com</p>
-              <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-secondary-container text-on-secondary-container border border-secondary/20 shadow-sm">
-                System Administrator
-              </span>
-            </div>
+            
+            {isEditingUsername ? (
+              <div className="flex-1 space-y-sm">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    disabled={isSavingUsername}
+                    className="flex-1 bg-surface-container border border-outline-variant rounded-lg px-3 py-1.5 text-sm font-bold text-on-surface focus:outline-none focus:border-primary disabled:opacity-50"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveUsername}
+                    disabled={isSavingUsername}
+                    className="px-3 py-1.5 bg-primary text-on-primary rounded-lg text-xs font-bold shadow-sm hover:opacity-90 disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                  >
+                    {isSavingUsername ? (
+                      <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                    ) : "Save"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingUsername(false);
+                      setNewUsername(user?.username ?? "");
+                      setUsernameError(null);
+                    }}
+                    disabled={isSavingUsername}
+                    className="px-3 py-1.5 bg-surface-container-high text-on-surface-variant rounded-lg text-xs font-bold hover:bg-surface-container-highest cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {usernameError && (
+                  <p className="text-xs text-error font-medium">{usernameError}</p>
+                )}
+              </div>
+            ) : (
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-on-surface">
+                    {user?.username ?? "Unknown User"}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setIsEditingUsername(true);
+                      setNewUsername(user?.username ?? "");
+                    }}
+                    className="p-1 hover:bg-surface-container-high rounded text-on-surface-variant cursor-pointer transition-colors"
+                    title="Edit Username"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                  </button>
+                </div>
+                <p className="text-sm text-on-surface-variant font-medium">
+                  {user?.email ?? "No email"}
+                </p>
+                <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-secondary-container text-on-secondary-container border border-secondary/20 shadow-sm">
+                  {roleBadge}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Preferences */}
@@ -140,7 +223,7 @@ export default function AccountSettingsModal({
         onConfirm={handleResetLedger}
         title="Reset Business Ledger?"
         message="This will clear your product catalog, sales history, and orders. Your account profile will remain intact for a fresh start."
-        confirmText={isProcessing ? "Resetting..." : "Confirm Reset"}
+        confirmText="Confirm Reset"
         requireWord="RESET"
         isDanger={true}
       />
@@ -152,7 +235,7 @@ export default function AccountSettingsModal({
         onConfirm={handleDeleteAccount}
         title="Delete Profile & Data?"
         message="This action is final. Your account credentials and all supply chain telemetry will be permanently purged from our servers."
-        confirmText={isProcessing ? "Deleting..." : "Delete Account"}
+        confirmText="Delete Account"
         requireWord="DELETE"
         isDanger={true}
       />

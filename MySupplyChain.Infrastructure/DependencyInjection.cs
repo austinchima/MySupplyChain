@@ -33,6 +33,9 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
 
+        // Register IHttpContextAccessor for multi-tenancy context
+        services.AddHttpContextAccessor();
+
         // Register ML.NET Demand Forecaster via factory so ILogger can be injected
         var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MLModels", "sales_model.zip");
         services.AddSingleton<IDemandForecaster>(provider =>

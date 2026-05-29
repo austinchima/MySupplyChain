@@ -69,9 +69,13 @@ try
     });
 
     builder.Services.AddDataProtection();
+    builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddIdentityCore<MySupplyChain.Domain.Entities.User>(options =>
     {
+        // Require unique emails for all accounts
+        options.User.RequireUniqueEmail = true;
+        
         //Add spaces to the allowed user name characters
         options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ ";
         
@@ -149,23 +153,17 @@ try
     // ─── Seed Database ─────────────────────────────────────────────────────────
     if (!IsIntegrationTestRun)
     {
-        using (var scope = app.Services.CreateScope())
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        try
         {
-            var services = scope.ServiceProvider;
-            try
-            {
-                var context = services.GetRequiredService<MySupplyChain.Infrastructure.Persistence.ApplicationDbContext>();
-                await context.Database.MigrateAsync();
-
-                var seederLogger = services.GetRequiredService<ILogger<Program>>();
-                var csvPath = Path.Combine(app.Environment.ContentRootPath, "..", "data", "Retail-Supply-Chain-Sales-Dataset.csv");
-                await MySupplyChain.Infrastructure.Persistence.CsvDatabaseSeeder.SeedAsync(context, csvPath, seederLogger);
-            }
-            catch (Exception ex)
-            {
-                var seederLogger = services.GetRequiredService<ILogger<Program>>();
-                seederLogger.LogError(ex, "An error occurred while seeding the database.");
-            }
+            var context = services.GetRequiredService<MySupplyChain.Infrastructure.Persistence.ApplicationDbContext>();
+            await context.Database.MigrateAsync();
+        }
+        catch (Exception ex)
+        {
+            var seederLogger = services.GetRequiredService<ILogger<Program>>();
+            seederLogger.LogError(ex, "An error occurred while migrating the database.");
         }
     }
 

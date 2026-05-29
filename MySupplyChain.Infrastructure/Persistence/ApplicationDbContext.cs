@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MySupplyChain.Application.Common.Interfaces;
@@ -8,7 +10,9 @@ namespace MySupplyChain.Infrastructure.Persistence;
 /// <summary>
 /// EF Core implementation of the database context
 /// </summary>
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+public class ApplicationDbContext(
+    DbContextOptions<ApplicationDbContext> options,
+    IHttpContextAccessor httpContextAccessor)
     : IdentityDbContext<User>(options), IApplicationDbContext
 {
     public DbSet<Product> Products => Set<Product>();
@@ -18,6 +22,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Customer> Customers => Set<Customer>();
     // User DbSet is inherited from IdentityDbContext
+
+    private string? CurrentUserId => httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -68,8 +74,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             // IdentityUser uses string Id by default.
             entity.Property(e => e.Role).IsRequired();
-            // Identity handles UserName/Email uniqueness
+            // Allow duplicate usernames by making the NormalizedUserName index non-unique
+            entity.HasIndex(u => u.NormalizedUserName).IsUnique(false);
         });
+
+        // Set global query filters for multi-tenancy
+        modelBuilder.Entity<Product>().HasQueryFilter(e => e.UserId == CurrentUserId);
+        modelBuilder.Entity<SalesHistory>().HasQueryFilter(e => e.UserId == CurrentUserId);
+        modelBuilder.Entity<ReorderRequest>().HasQueryFilter(e => e.UserId == CurrentUserId);
+        modelBuilder.Entity<Order>().HasQueryFilter(e => e.UserId == CurrentUserId);
+        modelBuilder.Entity<Customer>().HasQueryFilter(e => e.UserId == CurrentUserId);
+        modelBuilder.Entity<OrderItem>().HasQueryFilter(e => e.UserId == CurrentUserId);
 
         // SEED DATA
         var staticDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -114,5 +129,30 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 SecurityStamp = "USER-SECURITY-STAMP-STATIC"
             }
         );
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var currentUserId = CurrentUserId;
+
+        foreach (var entry in ChangeTracker.Entries<EntityBase>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                    if (string.IsNullOrEmpty(entry.Entity.UserId))
+                    {
+                        entry.Entity.UserId = currentUserId;
+                    }
+                    break;
+
+                case EntityState.Modified:
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    break;
+            }
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
     }
 }

@@ -21,7 +21,7 @@ public class GetOrdersQueryHandler(IApplicationDbContext context) : IRequestHand
             Id = o.Id,
             OrderNumber = o.OrderNumber,
             Date = o.OrderDate.ToString("MMM dd, HH:mm"),
-            Customer = o.Customer.Name,
+            Customer = o.Customer?.Name ?? "Unknown Customer",
             Items = o.Items.Sum(i => i.Quantity),
             Status = o.Status.ToString().ToLower(),
             Total = o.TotalAmount.ToString("C")

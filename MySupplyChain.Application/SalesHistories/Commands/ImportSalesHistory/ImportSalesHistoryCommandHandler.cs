@@ -2,7 +2,6 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MySupplyChain.Application.Common.Exceptions;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Domain.Entities;
 using System.Globalization;
@@ -19,7 +18,7 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
         // Harden cache against duplicate SKUs in DB
         // We fetch the list first to avoid untranslatable GroupBy issues in EF Core
         var productsList = await context.Products
-            .Where(p => p.Sku != null && p.Sku != "")
+            .Where(p => p.Sku != "")
             .ToListAsync(cancellationToken);
 
         var productsCache = productsList
@@ -28,7 +27,7 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
 
         // Cache customers by email to avoid duplicates
         var customersList = await context.Customers
-            .Where(c => c.Email != null)
+            .Where(c => c.Email != "")
             .ToListAsync(cancellationToken);
 
         var customersCache = customersList
@@ -89,7 +88,10 @@ public class ImportSalesHistoryCommandHandler(IApplicationDbContext context) : I
                     if (!string.IsNullOrEmpty(request.ProductPriceColumn) && headers.Contains(request.ProductPriceColumn))
                     {
                         var priceStr = csv.GetField<string>(request.ProductPriceColumn);
-                        decimal.TryParse(priceStr, out price);
+                        if (!decimal.TryParse(priceStr, out price))
+                        {
+                            price = 0m;
+                        }
                     }
 
                     product = new Product

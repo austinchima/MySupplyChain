@@ -88,14 +88,14 @@ public class ForecastingBenchmarks
     private static float[] GenerateSeries(Random rng, int count)
     {
         var series = new float[count];
-        float base_ = 50f;
+        var baseValue = 50f;
         for (int i = 0; i < count; i++)
         {
             // Trend + weekly seasonality + noise
-            base_ += rng.NextSingle() * 0.2f - 0.1f;
+            baseValue += rng.NextSingle() * 0.2f - 0.1f;
             var seasonal = 5f * MathF.Sin(2f * MathF.PI * i / 7f);
             var noise = (float)(rng.NextDouble() * 4 - 2);
-            series[i] = MathF.Max(0, base_ + seasonal + noise);
+            series[i] = MathF.Max(0, baseValue + seasonal + noise);
         }
         return series;
     }

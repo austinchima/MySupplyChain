@@ -18,7 +18,7 @@ public class LoginQueryHandlerTests
     public async Task Handle_ShouldReturnToken_WhenCredentialsAreCorrect()
     {
         // Arrange
-        var query = new LoginQuery("user", "Password123!");
+        var query = new LoginQuery("user@example.com", "Password123!");
         var expectedToken = "valid.jwt.token";
         
         _authServiceMock.Setup(x => x.LoginAsync(query.UsernameOrEmail, query.Password))
@@ -35,7 +35,7 @@ public class LoginQueryHandlerTests
     public async Task Handle_ShouldThrowUnauthorizedAccessException_WhenLoginFails()
     {
         // Arrange
-        var query = new LoginQuery("wrong", "bad");
+        var query = new LoginQuery("wrong@example.com", "bad");
         _authServiceMock.Setup(x => x.LoginAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync((string?)null);
 

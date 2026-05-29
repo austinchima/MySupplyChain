@@ -44,7 +44,10 @@ export default function ProductInventoryList() {
   }, []);
 
   useEffect(() => {
-    fetchProducts();
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchProducts]);
 
   const handleDeleteProduct = async () => {
@@ -54,6 +57,7 @@ export default function ProductInventoryList() {
       setData(prev => prev.filter(p => p.id !== deleteId));
       setDeleteId(null);
     } catch (err) {
+      console.error("Failed to delete product:", err);
       alert("Failed to delete product.");
     }
   };
@@ -109,7 +113,7 @@ export default function ProductInventoryList() {
                 <span className="material-symbols-outlined text-[20px]">filter_list</span>
                 Status: {filter}
               </button>
-              <div className="absolute right-0 top-full mt-2 w-52 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden border-white/5">
+              <div className="absolute right-0 top-full mt-2 w-52 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
                 {["All", "Healthy", "Low Stock", "Out of Stock"].map(f => (
                   <button
                     key={f}
@@ -209,7 +213,7 @@ export default function ProductInventoryList() {
                 ) : sorted.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-md py-24 text-center text-sm text-on-surface-variant">
-                      <div className="max-w-md mx-auto space-y-3 px-md">
+                      <div className="max-w-sm mx-auto space-y-3 px-md">
                         <span className="material-symbols-outlined text-[48px] text-outline opacity-20">inventory_2</span>
                         <div className="space-y-1">
                           <p className="font-bold text-on-surface text-base">No inventory data available.</p>
@@ -263,7 +267,7 @@ export default function ProductInventoryList() {
                                 more_horiz
                               </span>
                             </button>
-                            <div className="absolute right-0 top-0 mt-8 w-48 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 overflow-hidden border-white/5">
+                            <div className="absolute right-0 top-0 mt-8 w-48 bg-surface-container-highest border border-outline-variant rounded-2xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 overflow-hidden">
                               <button 
                                 onClick={() => setUpdateReorderProduct(item)}
                                 className="w-full text-left px-md py-3.5 text-xs font-bold hover:bg-primary hover:text-on-primary flex items-center gap-3 transition-colors"

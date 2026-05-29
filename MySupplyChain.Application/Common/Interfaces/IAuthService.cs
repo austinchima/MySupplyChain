@@ -26,6 +26,11 @@ public interface IAuthService
     /// </summary>
     Task DeleteAccountAsync(string userId);
 
+    /// <summary>
+    /// Updates the user's username and returns a new JWT token
+    /// </summary>
+    Task<string> UpdateUsernameAsync(string userId, string newUsername);
+
     string GenerateJwtToken(User user);
 }
 

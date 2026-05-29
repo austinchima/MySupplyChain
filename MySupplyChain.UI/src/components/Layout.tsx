@@ -1,8 +1,9 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import SupportModal from "./SupportModal";
 import AccountSettingsModal from "./AccountSettingsModal";
+import { getUserFromToken } from "../lib/auth";
 
 /**
  * Root layout shell. Renders the Sidebar once and provides
@@ -11,6 +12,22 @@ import AccountSettingsModal from "./AccountSettingsModal";
 export default function Layout() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [user, setUser] = useState(() => getUserFromToken());
+
+  const handleUserUpdate = useCallback(() => {
+    setUser(getUserFromToken());
+  }, []);
+
+  // Force the current page to re-mount by navigating away and back
+  const handleDataReset = useCallback(() => {
+    setSettingsOpen(false);
+    // Navigate to a temporary path then immediately back to trigger a full re-render
+    navigate("/dashboard", { replace: true });
+    setTimeout(() => navigate(location.pathname, { replace: true }), 0);
+  }, [navigate, location.pathname]);
 
   return (
     <div className="flex min-h-screen bg-background text-on-surface">
@@ -27,7 +44,13 @@ export default function Layout() {
       </div>
 
       <SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
-      <AccountSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <AccountSettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onDataReset={handleDataReset}
+        onUserUpdate={handleUserUpdate}
+        user={user}
+      />
     </div>
   );
 }

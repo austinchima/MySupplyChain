@@ -126,17 +126,17 @@ public partial class DemandForecaster : IDemandForecaster
 
         // Use Linear Regression to find the real trend line for sparse data
         int n = salesList.Count;
-        float sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        float sumX = 0, sumY = 0, sumXy = 0, sumX2 = 0;
         
         for (int i = 0; i < n; i++)
         {
             sumX += i;
             sumY += salesList[i];
-            sumXY += i * salesList[i];
+            sumXy += i * salesList[i];
             sumX2 += i * i;
         }
 
-        float slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        float slope = (n * sumXy - sumX * sumY) / (n * sumX2 - sumX * sumX);
         float intercept = (sumY - slope * sumX) / n;
 
         // Calculate standard deviation of the residuals for confidence intervals
