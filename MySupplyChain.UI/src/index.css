@@ -197,3 +197,8 @@ body {
   animation: floatGlow 10s infinite ease-in-out;
 }
 
+/* Fix for native HTML dropdown options contrast on some OS/Browsers */
+option {
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+}
