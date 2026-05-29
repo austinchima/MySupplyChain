@@ -146,6 +146,7 @@ function LoginGate({
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/65 text-[20px]">mail</span>
                   <input
                     type="email"
+                    autoComplete="username"
                     value={usernameOrEmail}
                     onChange={(e) => setUsernameOrEmail(e.target.value)}
                     placeholder="you@company.com"
@@ -161,6 +162,7 @@ function LoginGate({
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/65 text-[20px]">lock</span>
                   <input
                     type="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
@@ -212,6 +214,7 @@ function LoginGate({
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/65 text-[20px]">mail</span>
                   <input
                     type="email"
+                    autoComplete="username"
                     value={signUpEmail}
                     onChange={(e) => setSignUpEmail(e.target.value)}
                     placeholder="you@company.com"
@@ -227,6 +230,7 @@ function LoginGate({
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/65 text-[20px]">lock</span>
                   <input
                     type="password"
+                    autoComplete="new-password"
                     value={signUpPassword}
                     onChange={(e) => setSignUpPassword(e.target.value)}
                     placeholder="Enter secure password"
