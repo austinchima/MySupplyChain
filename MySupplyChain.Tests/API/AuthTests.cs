@@ -46,9 +46,10 @@ public class AuthTests(WebApplicationFactory<Program> factory) : BaseIntegration
         var client = Factory.CreateClient();
         var username = "logintest";
         var password = "Password123!";
-        await client.PostAsJsonAsync("/api/auth/register", new RegisterCommand(username, "login@example.com", password));
+        var email = "login@example.com";
+        await client.PostAsJsonAsync("/api/auth/register", new RegisterCommand(username, email, password));
 
-        var query = new LoginQuery(username, password);
+        var query = new LoginQuery(email, password);
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/login", query);
@@ -69,7 +70,7 @@ public class AuthTests(WebApplicationFactory<Program> factory) : BaseIntegration
     {
         // Arrange
         var client = Factory.CreateClient();
-        var query = new LoginQuery("nonexistent", "WrongPass123!");
+        var query = new LoginQuery("nonexistent@example.com", "WrongPass123!");
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/login", query);
