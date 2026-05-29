@@ -9,8 +9,7 @@ public class DeleteAccountCommandHandler(IApplicationDbContext context, IAuthSer
 {
     public async Task Handle(DeleteAccountCommand request, CancellationToken cancellationToken)
     {
-        // 1. Wipe business data first
-        // In a real app, we'd filter these by UserId
+        // 1. Wipe business data first (scoped automatically by global query filters)
         context.SalesHistories.RemoveRange(context.SalesHistories);
         context.Orders.RemoveRange(context.Orders);
         context.Products.RemoveRange(context.Products);

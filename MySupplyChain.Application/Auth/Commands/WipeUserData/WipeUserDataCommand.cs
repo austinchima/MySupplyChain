@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using MySupplyChain.Application.Common.Interfaces;
 
 namespace MySupplyChain.Application.Auth.Commands.WipeUserData;
@@ -10,8 +9,8 @@ public class WipeUserDataCommandHandler(IApplicationDbContext context) : IReques
 {
     public async Task Handle(WipeUserDataCommand request, CancellationToken cancellationToken)
     {
-        // In a real multi-tenant app, filter by UserId. 
-        // For this single-user demo/prototype, we wipe the global tables.
+        // The global query filters automatically scope these collections
+        // to the current authenticated user's data.
         
         context.SalesHistories.RemoveRange(context.SalesHistories);
         context.Orders.RemoveRange(context.Orders);

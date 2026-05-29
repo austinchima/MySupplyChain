@@ -9,7 +9,8 @@ using MySupplyChain.Domain.Entities;
 namespace MySupplyChain.Infrastructure.Authentication;
 
 /// <summary>
-/// Service for user authentication and JWT token generation
+/// Service for user authentication and JWT token generation.
+/// Login is email-only; usernames are display names and may be duplicated.
 /// </summary>
 public class AuthService(
     UserManager<User> userManager,
@@ -21,13 +22,13 @@ public class AuthService(
 
     public async Task<User> RegisterAsync(string username, string email, string password)
     {
-        // Check if user already exists
-        var existingUser = await userManager.FindByNameAsync(username) ?? await userManager.FindByEmailAsync(email);
+        // Uniqueness is enforced on email only — usernames are display names
+        var existingUser = await userManager.FindByEmailAsync(email);
         if (existingUser != null)
         {
             throw new Application.Common.Exceptions.ValidationException(new Dictionary<string, string[]>
             {
-                { "User", ["User with this username or email already exists."] }
+                { "User", ["An account with this email address already exists."] }
             });
         }
 
@@ -55,9 +56,8 @@ public class AuthService(
 
     public async Task<string?> LoginAsync(string usernameOrEmail, string password)
     {
-        // Find user by username or email
-        var user = await userManager.FindByNameAsync(usernameOrEmail) ??
-                   await userManager.FindByEmailAsync(usernameOrEmail);
+        // Resolve user by email only (usernames are not unique)
+        var user = await userManager.FindByEmailAsync(usernameOrEmail);
 
         if (user == null)
         {
@@ -83,6 +83,24 @@ public class AuthService(
         {
             await userManager.DeleteAsync(user);
         }
+    }
+
+    public async Task<string> UpdateUsernameAsync(string userId, string newUsername)
+    {
+        var user = await userManager.FindByIdAsync(userId) ?? throw new Application.Common.Exceptions.NotFoundException(nameof(User), userId);
+        user.UserName = newUsername;
+        var result = await userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors
+                .GroupBy(e => e.Code, e => e.Description)
+                .ToDictionary(g => g.Key, g => g.ToArray());
+
+            throw new Application.Common.Exceptions.ValidationException(errors);
+        }
+
+        return GenerateJwtToken(user);
     }
 
     public string GenerateJwtToken(User user)

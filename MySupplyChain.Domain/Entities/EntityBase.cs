@@ -25,4 +25,9 @@ public abstract class EntityBase
     /// When the entity was last updated (UTC)
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// The owner user identifier for multi-tenancy
+    /// </summary>
+    public string? UserId { get; set; }
 }

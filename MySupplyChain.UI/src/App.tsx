@@ -44,7 +44,7 @@ function LoginGate({
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
 
   return (
-    <div className="min-h-screen bg-[#0c0e12] flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
+    <div className="min-h-screen bg-surface-container-lowest flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
       
       {/* Dynamic Ambient Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
@@ -60,24 +60,24 @@ function LoginGate({
         
         {/* Cyberpunk matrix-grid overlay */}
         <div 
-          className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-80"
+          className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-size-[40px_40px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-80"
         ></div>
       </div>
 
       <div className="w-[460px] max-w-full bg-[#15181e]/75 border border-white/5 rounded-3xl p-8 space-y-7 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl z-10 relative">
         
         {/* Inner Card Glow Lines */}
-        <div className="absolute inset-x-0 -top-px h-[2px] bg-gradient-to-r from-transparent via-primary/45 to-transparent"></div>
-        <div className="absolute inset-x-0 -bottom-px h-[2px] bg-gradient-to-r from-transparent via-secondary/25 to-transparent"></div>
+        <div className="absolute inset-x-0 -top-px h-[2px] bg-linear-to-r from-transparent via-primary/45 to-transparent"></div>
+        <div className="absolute inset-x-0 -bottom-px h-[2px] bg-linear-to-r from-transparent via-secondary/25 to-transparent"></div>
 
         {/* Logo & Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center p-3 bg-gradient-to-br from-primary/15 to-secondary/5 border border-primary/20 rounded-2xl text-primary shadow-[0_8px_20px_rgba(175,198,255,0.15)] mb-1">
-            <span className="material-symbols-outlined text-[28px] bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <div className="inline-flex items-center justify-center p-3 bg-linear-to-br from-primary/15 to-secondary/5 border border-primary/20 rounded-2xl text-primary shadow-[0_8px_20px_rgba(175,198,255,0.15)] mb-1">
+            <span className="material-symbols-outlined text-[28px] bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               terminal
             </span>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-primary via-[#e2e2e8] to-secondary bg-clip-text text-transparent">
+          <h1 className="text-2xl font-extrabold tracking-tight bg-linear-to-r from-primary via-[#e2e2e8] to-secondary bg-clip-text text-transparent">
             MySupplyChain Portal
           </h1>
           <p className="text-on-surface-variant/80 text-sm max-w-[340px] mx-auto leading-relaxed">
@@ -89,7 +89,7 @@ function LoginGate({
         <div className="relative bg-[#0d0e12]/60 p-1.5 rounded-2xl border border-white/5 flex">
           {/* Animated background pill */}
           <div 
-            className="absolute top-1.5 bottom-1.5 rounded-xl bg-gradient-to-r from-primary/15 to-secondary/10 border border-primary/20 shadow-md transition-all duration-300 ease-out pointer-events-none"
+            className="absolute top-1.5 bottom-1.5 rounded-xl bg-linear-to-r from-primary/15 to-secondary/10 border border-primary/20 shadow-md transition-all duration-300 ease-out pointer-events-none"
             style={{
               left: activeTab === 'signin' ? '6px' : 'calc(50% + 2px)',
               width: 'calc(50% - 8px)'
@@ -118,7 +118,7 @@ function LoginGate({
 
         {/* Error Notification Alert */}
         {error && (
-          <div className="bg-[#ffdad6]/8 border border-error/25 rounded-2xl p-4 text-error text-xs flex items-start gap-2.5 shadow-lg animate-shake">
+          <div className="bg-on-error-container/8 border border-error/25 rounded-2xl p-4 text-error text-xs flex items-start gap-2.5 shadow-lg animate-shake">
             <span className="material-symbols-outlined text-[18px] text-error">warning</span>
             <span className="font-medium text-error-container/90 leading-relaxed">{error}</span>
           </div>
@@ -141,14 +141,14 @@ function LoginGate({
           >
             <form onSubmit={(e) => { e.preventDefault(); handleSignIn(); }} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-on-surface-variant/80 tracking-wide block">Username or Corporate Email</label>
+                <label className="text-xs font-semibold text-on-surface-variant/80 tracking-wide block">Corporate Email Address</label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/65 text-[20px]">person</span>
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline/65 text-[20px]">mail</span>
                   <input
-                    type="text"
+                    type="email"
                     value={usernameOrEmail}
                     onChange={(e) => setUsernameOrEmail(e.target.value)}
-                    placeholder="e.g., administrator"
+                    placeholder="you@company.com"
                     className="w-full bg-[#0d0e12]/70 border border-outline-variant/30 focus:border-primary/50 rounded-xl py-3.5 pl-11 pr-4 text-sm text-on-surface placeholder:text-outline/40 focus:outline-none transition-all duration-200"
                     required={activeTab === 'signin'}
                   />
@@ -173,7 +173,7 @@ function LoginGate({
               <div className="space-y-3 pt-2">
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-[#7098ff] hover:from-[#c2d5ff] hover:to-[#afc6ff] text-on-primary-container font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(175,198,255,0.1)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full bg-linear-to-r from-primary to-[#7098ff] hover:from-[#c2d5ff] hover:to-[#afc6ff] text-on-primary-container font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(175,198,255,0.1)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[20px]">login</span>
                   Sign In
@@ -238,7 +238,7 @@ function LoginGate({
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#b370ff] to-secondary hover:from-[#d5b5ff] hover:to-[#dfcaff] text-on-primary-container font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(255,175,255,0.1)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-linear-to-r from-[#b370ff] to-secondary hover:from-[#d5b5ff] hover:to-[#dfcaff] text-on-primary-container font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(255,175,255,0.1)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
                 <span className="material-symbols-outlined text-[20px]">person_add</span>
                 Sign Up
@@ -282,10 +282,11 @@ function App() {
       setToken(res.token);
       setIsAuth(true);
       return true;
-    } catch (err: any) {
+    } catch (err) {
+      const errorObj = err as { status?: number };
       console.error("Login attempt failed:", err);
       if (!isSilent) {
-        if (err.status === 401) {
+        if (errorObj.status === 401) {
           setError("Invalid credentials. Please verify your username and password.");
         } else {
           setError(
@@ -332,12 +333,13 @@ function App() {
         email: signUpEmail.trim(),
         password: signUpPassword
       });
-      // Register does not return a token, so we must log in immediately after
-      await attemptLogin({ usernameOrEmail: signUpUsername.trim(), password: signUpPassword });
-    } catch (err: any) {
+      // Register does not return a token, so we must log in immediately after using the email address
+      await attemptLogin({ usernameOrEmail: signUpEmail.trim(), password: signUpPassword });
+    } catch (err) {
       console.error("Sign up failed:", err);
+      const errorObj = err as { message?: string; status?: number };
       try {
-        const errorDetail = JSON.parse(err.message);
+        const errorDetail = JSON.parse(errorObj.message ?? "{}");
         if (errorDetail.errors) {
           // Flatten ProblemDetails validation errors
           const messages = Object.values(errorDetail.errors).flat().join(" ");
@@ -345,13 +347,13 @@ function App() {
         } else if (errorDetail.detail) {
           setError(errorDetail.detail);
         } else if (Array.isArray(errorDetail)) {
-          setError(errorDetail.map((e: any) => e.description).join(" "));
+          setError((errorDetail as { description: string }[]).map((e) => e.description).join(" "));
         } else {
-          setError(err.message || "Sign up failed. Please try again.");
+          setError(errorObj.message || "Sign up failed. Please try again.");
         }
       } catch {
-        if (err.status === 400 || err.status === 409) {
-          setError(err.message || "Registration failed. Ensure password matches security criteria (e.g. uppercase, number, symbol).");
+        if (errorObj.status === 400 || errorObj.status === 409) {
+          setError(errorObj.message || "Registration failed. Ensure password matches security criteria (e.g. uppercase, number, symbol).");
         } else {
           setError("Unable to complete registration. Please check internet connection.");
         }
@@ -362,7 +364,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-[#0c0e12] flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
+      <div className="w-full min-h-screen bg-surface-container-lowest flex flex-col items-center justify-center p-6 relative overflow-hidden font-['Outfit'] select-none">
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }}></div>
         </div>
@@ -374,14 +376,14 @@ function App() {
             </span>
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               MySupplyChain
             </h1>
             <p className="text-on-surface-variant/80 text-sm">
               Establishing secure backend connection...
             </p>
           </div>
-          <div className="w-full bg-[#1e2024] rounded-full h-1 overflow-hidden">
+          <div className="w-full bg-surface-container rounded-full h-1 overflow-hidden">
             <div className="bg-primary h-1 rounded-full w-2/3 animate-[pulse_1.5s_infinite_ease-in-out]"></div>
           </div>
         </div>

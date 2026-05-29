@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using MySupplyChain.Application.Common.Exceptions;
 using MySupplyChain.Application.Common.Interfaces;
@@ -20,7 +21,8 @@ public class CreateOrderCommandHandlerTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _context = new ApplicationDbContext(options);
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+        _context = new ApplicationDbContext(options, httpContextAccessorMock.Object);
         _forecasterMock = new Mock<IDemandForecaster>();
 
         _handler = new CreateOrderCommandHandler(_context, _forecasterMock.Object);

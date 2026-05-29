@@ -95,6 +95,12 @@ export const auth = {
     request<void>("/auth/account", {
       method: "DELETE",
     }),
+
+  updateUsername: (newUsername: string) =>
+    request<AuthResponse>("/auth/username", {
+      method: "PUT",
+      body: JSON.stringify({ newUsername }),
+    }),
 };
 
 // ─── Products ──────────────────────────────────────────────────────────────

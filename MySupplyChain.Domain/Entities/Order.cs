@@ -10,6 +10,6 @@ public class Order : EntityBase
     public OrderStatus Status { get; set; }
     public decimal TotalAmount { get; set; }
 
-    public Customer Customer { get; set; } = null!;
+    public Customer? Customer { get; set; } = null!;
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 }
