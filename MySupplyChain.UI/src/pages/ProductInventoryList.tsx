@@ -213,11 +213,11 @@ export default function ProductInventoryList() {
                 ) : sorted.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-md py-24 text-center text-sm text-on-surface-variant">
-                      <div className="max-w-sm mx-auto space-y-3 px-md">
+                      <div className="max-w-md min-w-[280px] w-full mx-auto space-y-3 px-4">
                         <span className="material-symbols-outlined text-[48px] text-outline opacity-20">inventory_2</span>
                         <div className="space-y-1">
-                          <p className="font-bold text-on-surface text-base">No inventory data available.</p>
-                          <p className="text-xs leading-relaxed max-w-[280px] mx-auto">
+                          <p className="font-bold text-on-surface text-base whitespace-nowrap">No inventory data available.</p>
+                          <p className="text-xs leading-relaxed max-w-[280px] mx-auto text-balance">
                             Import a CSV or create a product manually to populate the terminal records.
                           </p>
                         </div>
