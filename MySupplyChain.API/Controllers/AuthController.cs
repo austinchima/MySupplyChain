@@ -23,8 +23,8 @@ public class AuthController(IMediator mediator) : ControllerBase
     /// <returns>A success message and the ID of the newly created user.</returns>
     /// <response code="200">User registered successfully</response>
     /// <response code="400">Invalid registration details or user already exists</response>
-    
-    
+
+
     [HttpPost("register")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
@@ -63,7 +63,10 @@ public class AuthController(IMediator mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ResetLedger()
     {
-        await mediator.Send(new WipeUserDataCommand());
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        await mediator.Send(new WipeUserDataCommand(userId));
         return NoContent();
     }
 

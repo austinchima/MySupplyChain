@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySupplyChain.Infrastructure.Persistence;
 
@@ -30,9 +31,12 @@ public class HealthController(ApplicationDbContext context, ILogger<HealthContro
     /// </summary>
     /// <returns>A detailed health report including API, Database, and ML Model status.</returns>
     /// <response code="200">System is fully healthy</response>
+    /// <response code="401">Unauthorized - authentication required</response>
     /// <response code="503">System is unhealthy (e.g. database down)</response>
+    [Authorize]
     [HttpGet("detailed")]
     [ProducesResponseType(typeof(Dictionary<string, object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Dictionary<string, object>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetDetailed()
     {

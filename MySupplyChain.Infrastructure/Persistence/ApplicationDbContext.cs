@@ -8,7 +8,7 @@ using MySupplyChain.Domain.Entities;
 namespace MySupplyChain.Infrastructure.Persistence;
 
 /// <summary>
-/// EF Core implementation of the database context
+/// EF Core implementation of the database context with tenant isolation via global query filters.
 /// </summary>
 public class ApplicationDbContext(
     DbContextOptions<ApplicationDbContext> options,
@@ -23,13 +23,39 @@ public class ApplicationDbContext(
     public DbSet<Customer> Customers => Set<Customer>();
     // User DbSet is inherited from IdentityDbContext
 
-    private string? CurrentUserId => httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    private string? _explicitTenantId;
+
+    /// <summary>
+    /// Gets the current tenant ID from either explicit context (for background jobs) or HTTP context.
+    /// </summary>
+    private string? CurrentUserId =>
+        _explicitTenantId ?? httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    /// <summary>
+    /// Sets the tenant context explicitly. Use this for background jobs and scenarios without HTTP context.
+    /// Must be called before any database operations.
+    /// </summary>
+    /// <param name="userId">The user ID to set as the tenant context</param>
+    /// <exception cref="ArgumentNullException">Thrown if userId is null or empty</exception>
+    public void SetTenantContext(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new ArgumentNullException(nameof(userId), "Tenant ID cannot be null or empty");
+        _explicitTenantId = userId;
+    }
+
+    /// <summary>
+    /// Clears the explicit tenant context. Only use for special admin/system operations that intentionally bypass tenant isolation.
+    /// </summary>
+    public void ClearTenantContext()
+    {
+        _explicitTenantId = null;
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
-        
-        // Suppress the pending model changes warning for seeded data
+
         optionsBuilder.ConfigureWarnings(warnings =>
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     }
@@ -68,17 +94,14 @@ public class ApplicationDbContext(
         });
 
         // Configure User entity
-        // IdentityUser configuration is handled by base.OnModelCreating
-        // We can add additional configs for custom properties if needed
         modelBuilder.Entity<User>(entity =>
         {
-            // IdentityUser uses string Id by default.
             entity.Property(e => e.Role).IsRequired();
-            // Allow duplicate usernames by making the NormalizedUserName index non-unique
             entity.HasIndex(u => u.NormalizedUserName).IsUnique(false);
         });
 
         // Set global query filters for multi-tenancy
+        // These filters are automatically applied to all queries on these entities
         modelBuilder.Entity<Product>().HasQueryFilter(e => e.UserId == CurrentUserId);
         modelBuilder.Entity<SalesHistory>().HasQueryFilter(e => e.UserId == CurrentUserId);
         modelBuilder.Entity<ReorderRequest>().HasQueryFilter(e => e.UserId == CurrentUserId);
@@ -88,17 +111,10 @@ public class ApplicationDbContext(
 
         // SEED DATA
         var staticDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-
-        // Seed default users with real password hashes
-        // IDs must be strings for IdentityUser
         var adminId = "8e445865-a24d-4543-a6c6-9443d048cdb9";
         var userId = "3b333929-f974-444e-a8d3-68f50a356d51";
 
-        // Pre-computed ASP.NET Core Identity password hashes (deterministic for seeding)
-        // Admin password: "Admin@123"
         var adminPasswordHash = "AQAAAAIAAYagAAAAEMXMR7yRo+DSLWhxE7Ps46cMsJAupwpX3z7sUyw+LW6J8Ugj6c/U5UHMgltwojS/EQ==";
-        // User password: "User@123"  
         var userPasswordHash = "AQAAAAIAAYagAAAAEHMM6IpS5myk37PgKXxvY7E4nck6RwAWm1fpELJWC3EFTwk8i0Ivo9BNpEt7xiwgrQ==";
 
         modelBuilder.Entity<User>().HasData(
@@ -134,6 +150,14 @@ public class ApplicationDbContext(
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var currentUserId = CurrentUserId;
+
+        // Validate tenant context is set before any write operations
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            throw new InvalidOperationException(
+                "Cannot execute database operation without tenant context. " +
+                "Ensure this is performed within an authenticated HTTP context, or call SetTenantContext() for background operations.");
+        }
 
         foreach (var entry in ChangeTracker.Entries<EntityBase>())
         {

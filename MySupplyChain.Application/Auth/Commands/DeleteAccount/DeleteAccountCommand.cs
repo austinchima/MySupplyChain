@@ -9,7 +9,11 @@ public class DeleteAccountCommandHandler(IApplicationDbContext context, IAuthSer
 {
     public async Task Handle(DeleteAccountCommand request, CancellationToken cancellationToken)
     {
-        // 1. Wipe business data first (scoped automatically by global query filters)
+        // Validate that a user ID was provided (controller should validate authentication)
+        if (string.IsNullOrEmpty(request.UserId))
+            throw new UnauthorizedAccessException("User ID cannot be empty");
+
+        // 1. Wipe business data first (scoped automatically by global query filters to current user)
         context.SalesHistories.RemoveRange(context.SalesHistories);
         context.Orders.RemoveRange(context.Orders);
         context.Products.RemoveRange(context.Products);

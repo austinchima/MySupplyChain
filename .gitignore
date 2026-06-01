@@ -147,3 +147,6 @@ MySupplyChain.Infrastructure/MLModels/*.zip
 graphify-out/
 !graphify-out/GRAPH_REPORT.md
 
+.agents/
+.antigravitycli
+.vscode/
