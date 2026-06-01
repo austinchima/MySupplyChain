@@ -150,14 +150,7 @@ public class ApplicationDbContext(
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var currentUserId = CurrentUserId;
-
-        // Validate tenant context is set before any write operations
-        if (string.IsNullOrEmpty(currentUserId))
-        {
-            throw new InvalidOperationException(
-                "Cannot execute database operation without tenant context. " +
-                "Ensure this is performed within an authenticated HTTP context, or call SetTenantContext() for background operations.");
-        }
+        var hasTenantScopedChanges = false;
 
         foreach (var entry in ChangeTracker.Entries<EntityBase>())
         {
@@ -169,12 +162,23 @@ public class ApplicationDbContext(
                     {
                         entry.Entity.UserId = currentUserId;
                     }
+                    hasTenantScopedChanges = true;
                     break;
 
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    hasTenantScopedChanges = true;
                     break;
             }
+        }
+
+        // Validate tenant context is set before any tenant-scoped write operations
+        // Allow writes to User table (registration) without tenant context
+        if (hasTenantScopedChanges && string.IsNullOrEmpty(currentUserId))
+        {
+            throw new InvalidOperationException(
+                "Cannot execute database operation without tenant context. " +
+                "Ensure this is performed within an authenticated HTTP context, or call SetTenantContext() for background operations.");
         }
 
         return base.SaveChangesAsync(cancellationToken);

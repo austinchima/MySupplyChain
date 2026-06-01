@@ -23,6 +23,10 @@ public class CreateOrderCommandHandlerTests
 
         var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         _context = new ApplicationDbContext(options, httpContextAccessorMock.Object);
+
+        // Set tenant context for unit tests (background job pattern)
+        _context.SetTenantContext("test-user-id");
+
         _forecasterMock = new Mock<IDemandForecaster>();
 
         _handler = new CreateOrderCommandHandler(_context, _forecasterMock.Object);
