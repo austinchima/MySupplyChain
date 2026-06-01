@@ -52,6 +52,8 @@ public partial class DemandForecaster : IDemandForecaster
     {
         var salesList = historicalSales.ToList();
 
+        // Singular Spectrum Analysis (SSA) requires a minimum dataset to capture seasonality (normally 14+).
+        // If the model is not loaded or sparse data exists, we fall back to a robust statistical projection.
         if (!IsModelLoaded || salesList.Count < 14)
         {
             return Task.FromResult(BuildFallbackForecast(productId, salesList, horizon));
@@ -59,15 +61,17 @@ public partial class DemandForecaster : IDemandForecaster
 
         try
         {
+            // 1. Create a specialized time-series forecasting engine from the loaded ML.NET pipeline
             var engine = _model!.CreateTimeSeriesEngine<SsaModelInput, SsaForecastOutput>(_mlContext);
             var prediction = engine.Predict();
 
-            // Ensure we have exactly 'horizon' entries (pad/trim as needed)
+            // 2. Ensure we have exactly 'horizon' entries (pad/trim as needed)
             var forecasted = NormalizeArray(prediction.ForecastedUnits, horizon);
             var lower = NormalizeArray(prediction.LowerBound, horizon);
             var upper = NormalizeArray(prediction.UpperBound, horizon);
 
-            // Clamp negatives to zero — demand can't be negative
+            // 3. Clamp negative forecasts to zero — physical demand cannot be less than zero.
+            // SSA decompositions can occasionally drop below zero due to noise wave components.
             for (int i = 0; i < horizon; i++)
             {
                 forecasted[i] = MathF.Max(0, forecasted[i]);
@@ -75,7 +79,7 @@ public partial class DemandForecaster : IDemandForecaster
                 upper[i] = MathF.Max(0, upper[i]);
             }
 
-            // Compute RMSE/MAE from hold-out tail if we have enough data
+            // 4. Compute RMSE and MAE accuracy metrics against historical hold-out tails
             var (rmse, mae) = ComputeAccuracyMetrics(salesList, forecasted);
 
             if (_logger.IsEnabled(LogLevel.Information))
@@ -99,6 +103,10 @@ public partial class DemandForecaster : IDemandForecaster
         }
     }
 
+    /// <summary>
+    /// Builds a statistical fallback forecast using Linear Regression and residual analysis.
+    /// Utilized when the ML.NET model is missing or the product lacks sufficient chronological history.
+    /// </summary>
     private ForecastResult BuildFallbackForecast(int productId, List<float> salesList, int horizon)
     {
         if (_logger.IsEnabled(LogLevel.Warning))
@@ -108,9 +116,10 @@ public partial class DemandForecaster : IDemandForecaster
         var lower = new float[horizon];
         var upper = new float[horizon];
 
+        // Edge case: If we have insufficient history (< 2 points) to calculate a trend slope,
+        // we emit a flat-line projection of the single point (or zero) with a standard +/- 20% variance.
         if (salesList.Count < 2)
         {
-            // If 0 or 1 data point, we can only return a flat line of that point (or 0)
             float val = salesList.Count == 1 ? salesList[0] : 0f;
             for (int i = 0; i < horizon; i++)
             {
@@ -124,7 +133,8 @@ public partial class DemandForecaster : IDemandForecaster
             };
         }
 
-        // Use Linear Regression to find the real trend line for sparse data
+        // 1. Calculate Least-Squares Linear Regression parameters: y = slope * x + intercept
+        // This captures overall trend trajectory on sparse or new-product inventory datasets.
         int n = salesList.Count;
         float sumX = 0, sumY = 0, sumXy = 0, sumX2 = 0;
         
@@ -139,7 +149,8 @@ public partial class DemandForecaster : IDemandForecaster
         float slope = (n * sumXy - sumX * sumY) / (n * sumX2 - sumX * sumX);
         float intercept = (sumY - slope * sumX) / n;
 
-        // Calculate standard deviation of the residuals for confidence intervals
+        // 2. Perform residual analysis (actuals vs. trend line) to compute model errors.
+        // Standard deviation of residuals provides the scale for statistical confidence bounds.
         float sumSquaredResiduals = 0;
         float sumAbsResiduals = 0;
         for (int i = 0; i < n; i++)
@@ -153,16 +164,18 @@ public partial class DemandForecaster : IDemandForecaster
         float stdDev = MathF.Sqrt(sumSquaredResiduals / n);
         float mae = sumAbsResiduals / n;
 
+        // 3. Project the trend line into the future, and map confidence bounds.
         for (int i = 0; i < horizon; i++)
         {
-            // Project the trend line into the future (starting from x = n)
             float projectedX = n + i;
             float trendValue = slope * projectedX + intercept;
             
-            // Demand can't be negative
+            // Clamp negative trend values to zero
             float baseValue = MathF.Max(0, trendValue);
             
             forecasted[i] = baseValue;
+            
+            // 95% Confidence Interval using standard Z-score of 1.96 times the residual standard deviation
             lower[i] = MathF.Max(0, baseValue - 1.96f * stdDev);
             upper[i] = baseValue + 1.96f * stdDev;
         }

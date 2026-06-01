@@ -12,20 +12,22 @@ public class GetProductForecastQueryHandler(IApplicationDbContext context, IDema
 {
     public async Task<ProductForecastDto> Handle(GetProductForecastQuery request, CancellationToken cancellationToken)
     {
+        // 1. Fetch the target product details from database
         var product = await context.Products
             .FirstOrDefaultAsync(p => p.Id == request.ProductId, cancellationToken);
 
         if (product == null)
             throw new InvalidOperationException($"Product with ID {request.ProductId} not found");
 
-        // Get historical sales data ordered chronologically (oldest → newest)
+        // 2. Fetch historical sales data ordered chronologically (oldest → newest)
+        // This chronological sorting is crucial for time-series modeling algorithms like SSA.
         var salesHistory = await context.SalesHistories
             .Where(s => s.ProductId == request.ProductId)
             .OrderBy(s => s.Date)
             .Select(s => (float)s.QuantitySold)
             .ToListAsync(cancellationToken);
 
-        // Use SSA to generate multi-day forecast
+        // 3. Generate multi-day demand forecast via ML.NET SSA or statistical fallback
         var forecast = salesHistory.Count != 0
             ? await forecaster.PredictDemandAsync(request.ProductId, product.Sku, salesHistory, request.DaysToForecast)
             : new ForecastResult
@@ -37,10 +39,17 @@ public class GetProductForecastQueryHandler(IApplicationDbContext context, IDema
                 Mae = 0f
             };
 
+        // 4. Calculate total expected demand over the forecast horizon
         var totalPredictedDemand = forecast.ForecastedUnits.Sum();
+        
+        // 5. Establish a 50% safety buffer based on the product's default reorder point.
+        // This mitigates the risk of stockouts due to forecasting error, delivery delays, or demand surges.
         var safetyBuffer = product.ReorderPoint * 0.5f;
+        
+        // 6. Assess whether stock levels are adequate to cover projected demand + safety buffer
         var shouldReorder = product.CurrentStock < totalPredictedDemand + safetyBuffer;
         
+        // 7. Compose highly detailed action recommendations for inventory administrators
         var recommendation = shouldReorder
             ? $"⚠️ REORDER RECOMMENDED: Current stock ({product.CurrentStock}) is insufficient for " +
               $"projected {request.DaysToForecast}-day demand of {totalPredictedDemand:F1} units " +

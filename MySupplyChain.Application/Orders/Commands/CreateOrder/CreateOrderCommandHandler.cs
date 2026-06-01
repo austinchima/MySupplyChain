@@ -11,19 +11,22 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
 {
     public async Task<int> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
+        // 1. Fetch the target product to check current stock status
         var product = await context.Products
             .FindAsync([request.ProductId], cancellationToken);
 
         if (product == null)
             throw new NotFoundException($"Product {request.ProductId} not found");
 
+        // 2. Validate that inventory levels can satisfy the order quantity
         if (product.CurrentStock < request.Quantity)
              throw new ValidationException(new Dictionary<string, string[]> { { "Quantity", new[] { "Insufficient stock" } } });
 
-        // Decrement stock
+        // 3. Deduct physical stock from catalog inventory
         product.CurrentStock -= request.Quantity;
 
-        // Record the sale
+        // 4. Create and record a denormalized transaction in the sales history log.
+        // This chronological log serves as raw time-series input for the AI Demand Forecaster.
         var sale = new SalesHistory
         {
             ProductId = request.ProductId,
@@ -34,9 +37,10 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
         
         context.SalesHistories.Add(sale);
 
+        // 5. Commit database changes transactionally
         await context.SaveChangesAsync(cancellationToken);
 
-        // Check for reorder asynchronously
+        // 6. Trigger intelligent automated restocking if stock drops below the threshold reorder point
         if (product.CurrentStock <= product.ReorderPoint)
         {
             await CreateReorderRequestAsync(product, cancellationToken);
@@ -47,15 +51,16 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
 
     private async Task CreateReorderRequestAsync(Product product, CancellationToken cancellationToken)
     {
-        // Check if an active reorder already exists (Pending or Approved)
+        // Prevent duplicate reorders: Check if an active reorder request already exists (Pending or Approved)
         var activeReorderExists = await context.ReorderRequests
             .AnyAsync(r => r.ProductId == product.Id && 
-                          (r.Status == Domain.Enums.Status.Pending || r.Status == Domain.Enums.Status.Approved), 
-                          cancellationToken);
+                           (r.Status == Domain.Enums.Status.Pending || r.Status == Domain.Enums.Status.Approved), 
+                           cancellationToken);
 
         if (activeReorderExists) return;
 
-        // Get sales history for forecasting (last 90 records for better SSA accuracy)
+        // Fetch chronological sales transaction logs (up to last 90 records)
+        // A minimum of 14 points is mathematically required for SSA, and larger counts improve stability
         var history = await context.SalesHistories
             .Where(s => s.ProductId == product.Id)
             .OrderByDescending(s => s.Date)
@@ -63,15 +68,19 @@ public class CreateOrderCommandHandler(IApplicationDbContext context, IDemandFor
             .Select(s => (float)s.QuantitySold)
             .ToListAsync(cancellationToken);
 
-        // Reverse to chronological order (oldest → newest) for SSA
+        // Reverse records to oldest → newest order as required by the time-series model
         history.Reverse();
 
+        // Invoke ML.NET or statistical fallback forecasting engine to compute future trend vector
         var forecast = await forecaster.PredictDemandAsync(product.Id, product.Sku, history);
         
-        // Use the first 7 days of forecast to determine reorder quantity
+        // Sum projected demand for the next 7 days (weekly forecast slice)
         var weeklyDemand = forecast.ForecastedUnits.Take(7).Sum();
         var predictedDemand = (decimal)forecast.ForecastedUnits[0];
-        var quantityToOrder = (int)Math.Max(50, weeklyDemand * 2); // Cover ~2 weeks
+        
+        // Formula: Purchase quantity equals twice the weekly projected demand to cover a 2-week cycle,
+        // subject to a shipping-optimized minimum order quantity floor of 50 units.
+        var quantityToOrder = (int)Math.Max(50, weeklyDemand * 2);
 
         var request = new ReorderRequest
         {

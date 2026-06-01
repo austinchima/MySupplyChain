@@ -48,25 +48,31 @@ export default function AIDemandForecastingDetail() {
     fetchForecast();
   }, [fetchForecast]);
 
-  // Build SVG chart path from forecastedUnits
+  // Build SVG chart path from forecastedUnits and confidence bounds
   const buildForecastChart = () => {
     if (!forecast || forecast.forecastedUnits.length === 0) return null;
 
     const units = forecast.forecastedUnits;
     const lower = forecast.lowerBound;
     const upper = forecast.upperBound;
+    
+    // 1. Establish chart dimension bounds and compute the vertical projection scaling factor
     const maxVal = Math.max(...units, ...upper, 1);
     const chartW = 900;
     const chartH = 250;
     const padL = 50;
     const padT = 20;
 
+    // Scaling helpers: Translate index (time) and value (quantity) into SVG coordinate space
     const toX = (i: number) => padL + (i / (units.length - 1)) * chartW;
     const toY = (v: number) => padT + chartH - (v / maxVal) * chartH;
 
+    // 2. Generate the path for the primary projected demand line
     const forecastPath = units.map((v, i) => `${i === 0 ? "M" : "L"} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(" ");
 
-    // Confidence interval polygon
+    // 3. Construct the confidence interval shaded area path.
+    // Creates a closed polygon: loops chronologically forward across the upper bounds,
+    // then loops chronologically backward across the lower bounds, and closes the loop (Z).
     let ciPath = "";
     if (lower.length > 0 && upper.length > 0) {
       const topPoints = upper.map((v, i) => `${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(" L ");
@@ -74,7 +80,7 @@ export default function AIDemandForecastingDetail() {
       ciPath = `M ${topPoints} L ${botPoints} Z`;
     }
 
-    // Y-axis labels
+    // 4. Generate Y-axis gridline thresholds (spaced evenly at 25% intervals)
     const yLabels = [0, 0.25, 0.5, 0.75, 1].map((frac) => ({
       y: padT + chartH - frac * chartH,
       label: Math.round(frac * maxVal).toLocaleString(),
