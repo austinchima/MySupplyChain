@@ -58,6 +58,7 @@ async function request<T>(
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers,
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -96,10 +97,10 @@ export const auth = {
       method: "DELETE",
     }),
 
-  updateUsername: (newUsername: string) =>
+  updateUsername: (newUsername: string, currentPassword: string) =>
     request<AuthResponse>("/auth/username", {
       method: "PUT",
-      body: JSON.stringify({ newUsername }),
+      body: JSON.stringify({ newUsername, currentPassword }),
     }),
 };
 

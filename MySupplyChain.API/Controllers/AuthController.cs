@@ -86,7 +86,7 @@ public class AuthController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    /// Update user's username (display name)
+    /// Update user's username (display name) — requires current password for verification
     /// </summary>
     [Authorize]
     [HttpPut("username")]
@@ -98,9 +98,9 @@ public class AuthController(IMediator mediator) : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-        var token = await mediator.Send(new MySupplyChain.Application.Auth.Commands.UpdateUsername.UpdateUsernameCommand(userId, dto.NewUsername));
+        var token = await mediator.Send(new MySupplyChain.Application.Auth.Commands.UpdateUsername.UpdateUsernameCommand(userId, dto.NewUsername, dto.CurrentPassword));
         return Ok(new { Token = token, Message = "Username updated successfully" });
     }
 }
 
-public record UpdateUsernameDto(string NewUsername);
+public record UpdateUsernameDto(string NewUsername, string CurrentPassword);

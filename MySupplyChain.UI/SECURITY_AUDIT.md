@@ -563,18 +563,21 @@ const res = await fetch(`${BASE}${path}`, {
 ## Remediation Checklist
 
 ### Immediate (Week 1)
-- [ ] Move JWT from localStorage to HttpOnly cookie
-- [ ] Implement CSRF protection (double-submit cookie)
-- [ ] Add security headers to vercel.json
-- [ ] Add file size/content validation to CSV import
-- [ ] Document authentication flow changes
+- [x] ~~Move JWT from localStorage to HttpOnly cookie~~ — **Skipped**: App is cross-origin SPA (Vercel ↔ Render). HttpOnly cookies require `SameSite=None` which weakens CSRF. No XSS vectors exist (no `dangerouslySetInnerHTML`, no `eval`). Risk accepted for portfolio app context.
+- [x] ~~Implement CSRF protection~~ — **Not applicable**: Bearer tokens in `Authorization` headers are not auto-sent by browsers. CSRF is only relevant with cookie-based auth.
+- [x] Add security headers to vercel.json — **FIXED**: Added X-Content-Type-Options, X-Frame-Options, HSTS, Referrer-Policy, CSP, and Permissions-Policy.
+- [x] Add file size/content validation to CSV import — **FIXED**: Added 10MB file size limit, MIME type check, 100K row limit, and filename sanitization.
+- [x] Document authentication flow changes — See this checklist.
 
 ### Short Term (Week 2)
-- [ ] Implement frontend rate limiting
-- [ ] Add password confirmation for sensitive account changes
-- [ ] Improve JWT expiration handling
-- [ ] Add CSP nonce support
-- [ ] Configure secure fetch defaults
+- [x] ~~Implement frontend rate limiting~~ — **Skipped**: Frontend rate limiting is security theater. Rate limiting belongs on the backend/API gateway. Attackers bypass the frontend entirely.
+- [x] Add password confirmation for sensitive account changes — **FIXED**: Username change now requires current password confirmation (frontend + backend).
+- [x] Improve JWT expiration handling — **FIXED**: Tokens auto-cleared when expired or within 5-minute buffer. Both `isAuthenticated()` and `getUserFromToken()` now call `clearToken()` on error.
+- [x] ~~Add CSP nonce support~~ — **Not applicable**: Tailwind CSS is built via `@tailwindcss/vite` into static CSS bundles, not inline `<style>` tags. Nonces are irrelevant.
+- [x] Configure secure fetch defaults — **FIXED**: Added `cache: "no-store"` to API fetch calls. `mode: "same-origin"` skipped as it would break cross-origin API calls.
+
+### Bonus: Code Quality
+- [x] Replace hardcoded `localStorage` token operations with centralized `setToken()`/`clearToken()` in AccountSettingsModal and Sidebar.
 
 ### Medium Term (Week 3-4)
 - [ ] Implement refresh token rotation

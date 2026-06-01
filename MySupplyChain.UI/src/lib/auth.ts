@@ -12,15 +12,26 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+/** Buffer before actual expiry to proactively clear the token (5 minutes) */
+const EXPIRY_BUFFER_MS = 5 * 60 * 1000;
+
 export function isAuthenticated(): boolean {
   const token = getToken();
   if (!token) return false;
 
-  // Check if token is expired by decoding the payload
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000 > Date.now();
+    const expiresIn = payload.exp * 1000 - Date.now();
+
+    // Clear token if expired or within buffer of expiry
+    if (expiresIn < EXPIRY_BUFFER_MS) {
+      clearToken();
+      return false;
+    }
+
+    return true;
   } catch {
+    clearToken();
     return false;
   }
 }
@@ -38,7 +49,12 @@ export function getUserFromToken(): TokenUser | null {
 
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    if (payload.exp * 1000 <= Date.now()) return null;
+    const expiresIn = payload.exp * 1000 - Date.now();
+
+    if (expiresIn < EXPIRY_BUFFER_MS) {
+      clearToken();
+      return null;
+    }
 
     return {
       id: payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ?? "",
@@ -47,6 +63,7 @@ export function getUserFromToken(): TokenUser | null {
       role: payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? "User",
     };
   } catch {
+    clearToken();
     return null;
   }
 }

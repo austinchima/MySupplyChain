@@ -2,6 +2,7 @@ import Modal from "./Modal";
 import { useState } from "react";
 import ConfirmationModal from "./ConfirmationModal";
 import { auth } from "../lib/api";
+import { setToken, clearToken } from "../lib/auth";
 import type { TokenUser } from "../lib/auth";
 
 interface AccountSettingsModalProps {
@@ -25,6 +26,7 @@ export default function AccountSettingsModal({
   // Username edit states
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username ?? "");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
 
@@ -46,7 +48,7 @@ export default function AccountSettingsModal({
 
   const handleDeleteAccount = async () => {
     await auth.deleteAccount();
-    localStorage.removeItem("supplychain_jwt");
+    clearToken();
     window.location.reload();
   };
 
@@ -55,13 +57,18 @@ export default function AccountSettingsModal({
       setUsernameError("Username cannot be empty");
       return;
     }
+    if (!confirmPassword) {
+      setUsernameError("Please enter your current password to confirm this change.");
+      return;
+    }
     setIsSavingUsername(true);
     setUsernameError(null);
     try {
-      const res = await auth.updateUsername(newUsername);
-      localStorage.setItem("supplychain_jwt", res.token);
+      const res = await auth.updateUsername(newUsername, confirmPassword);
+      setToken(res.token);
       onUserUpdate?.();
       setIsEditingUsername(false);
+      setConfirmPassword("");
     } catch (err) {
       setUsernameError(err instanceof Error ? err.message : "Failed to update username");
     } finally {
@@ -89,6 +96,7 @@ export default function AccountSettingsModal({
                     disabled={isSavingUsername}
                     className="flex-1 bg-surface-container border border-outline-variant rounded-lg px-3 py-1.5 text-sm font-bold text-on-surface focus:outline-none focus:border-primary disabled:opacity-50"
                     autoFocus
+                    placeholder="New username"
                   />
                   <button
                     onClick={handleSaveUsername}
@@ -103,6 +111,7 @@ export default function AccountSettingsModal({
                     onClick={() => {
                       setIsEditingUsername(false);
                       setNewUsername(user?.username ?? "");
+                      setConfirmPassword("");
                       setUsernameError(null);
                     }}
                     disabled={isSavingUsername}
@@ -111,6 +120,14 @@ export default function AccountSettingsModal({
                     Cancel
                   </button>
                 </div>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isSavingUsername}
+                  placeholder="Enter current password to confirm"
+                  className="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary disabled:opacity-50"
+                />
                 {usernameError && (
                   <p className="text-xs text-error font-medium">{usernameError}</p>
                 )}

@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import CreateOrderModal from "./CreateOrderModal";
+import { clearToken } from "../lib/auth";
 
 interface NavItem {
   to: string;
@@ -107,7 +108,7 @@ export default function Sidebar({ onOpenSupport, onOpenSettings }: SidebarProps)
             </button>
             <button
               onClick={() => {
-                localStorage.removeItem("supplychain_jwt");
+                clearToken();
                 window.location.reload();
               }}
               className="w-[calc(100%-32px)] flex items-center gap-4 text-error mx-md px-md py-sm rounded-full hover:bg-error/10 hover:text-error transition-colors duration-200 text-sm font-semibold tracking-wide cursor-pointer text-left"

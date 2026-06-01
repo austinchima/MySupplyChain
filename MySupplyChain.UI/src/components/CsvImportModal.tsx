@@ -28,12 +28,36 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+  const MAX_ROW_COUNT = 100_000;
+  const ALLOWED_MIME_TYPES = ["text/csv", "application/vnd.ms-excel", "text/plain"];
+
   // Parse CSV headers and first few rows for preview
   const handleFileChange = (selectedFile: File) => {
-    if (!selectedFile.name.endsWith(".csv")) {
+    // 1. File size check
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setError(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit.`);
+      return;
+    }
+
+    // 2. MIME type + extension check
+    if (!ALLOWED_MIME_TYPES.includes(selectedFile.type) && !selectedFile.name.endsWith(".csv")) {
       setError("Please select a valid .csv file.");
       return;
     }
+
+    // 3. Extension check
+    if (!selectedFile.name.endsWith(".csv")) {
+      setError("File must have a .csv extension.");
+      return;
+    }
+
+    // 4. Filename sanitization (no path traversal)
+    if (selectedFile.name.includes("/") || selectedFile.name.includes("\\") || selectedFile.name.includes("..")) {
+      setError("Invalid filename.");
+      return;
+    }
+
     setError(null);
     setFile(selectedFile);
 
@@ -43,6 +67,14 @@ export default function CsvImportModal({ open, onClose, onImportSuccess }: CsvIm
       if (!text) return;
 
       const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+
+      // 5. Row count limit
+      if (lines.length > MAX_ROW_COUNT) {
+        setError(`CSV contains too many rows (${lines.length.toLocaleString()}). Maximum is ${MAX_ROW_COUNT.toLocaleString()}.`);
+        setFile(null);
+        return;
+      }
+
       if (lines.length === 0) {
         setError("The uploaded CSV file is empty.");
         return;

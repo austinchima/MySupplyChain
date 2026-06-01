@@ -85,9 +85,17 @@ public class AuthService(
         }
     }
 
-    public async Task<string> UpdateUsernameAsync(string userId, string newUsername)
+    public async Task<string> UpdateUsernameAsync(string userId, string newUsername, string currentPassword)
     {
         var user = await userManager.FindByIdAsync(userId) ?? throw new Application.Common.Exceptions.NotFoundException(nameof(User), userId);
+
+        // Verify current password before allowing username change
+        var passwordCheck = await signInManager.CheckPasswordSignInAsync(user, currentPassword, false);
+        if (!passwordCheck.Succeeded)
+        {
+            throw new UnauthorizedAccessException("Current password is incorrect.");
+        }
+
         user.UserName = newUsername;
         var result = await userManager.UpdateAsync(user);
 
