@@ -21,6 +21,9 @@ public class ApplicationDbContext(
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<SupplyChainEvent> SupplyChainEvents => Set<SupplyChainEvent>();
+
     // User DbSet is inherited from IdentityDbContext
 
     private string? _explicitTenantId;
@@ -100,6 +103,34 @@ public class ApplicationDbContext(
             entity.HasIndex(u => u.NormalizedUserName).IsUnique(false);
         });
 
+        // Configure Supplier entity (not tenant-scoped — shared reference data)
+        modelBuilder.Entity<Supplier>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(254);
+        });
+
+        // Configure Order → Supplier FK (optional, no cascade delete)
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasOne<Supplier>()
+                .WithMany()
+                .HasForeignKey(e => e.SupplierId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure ReorderRequest → Supplier FK (optional, no cascade delete)
+        modelBuilder.Entity<ReorderRequest>(entity =>
+        {
+            entity.HasOne(e => e.Supplier)
+                .WithMany(s => s.ReorderRequests)
+                .HasForeignKey(e => e.SupplierId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
         // Set global query filters for multi-tenancy
         // These filters are automatically applied to all queries on these entities
         modelBuilder.Entity<Product>().HasQueryFilter(e => e.UserId == CurrentUserId);
@@ -143,6 +174,38 @@ public class ApplicationDbContext(
                 Role = Domain.Enums.Role.User,
                 CreatedAt = staticDate,
                 SecurityStamp = "USER-SECURITY-STAMP-STATIC"
+            }
+        );
+
+        // Seed 3 sample suppliers with different promised lead times
+        var supplier1Id = new Guid("11111111-1111-1111-1111-111111111111");
+        var supplier2Id = new Guid("22222222-2222-2222-2222-222222222222");
+        var supplier3Id = new Guid("33333333-3333-3333-3333-333333333333");
+
+        modelBuilder.Entity<Supplier>().HasData(
+            new Supplier
+            {
+                Id = supplier1Id,
+                Name = "SwiftParts Co.",
+                Email = "orders@swiftparts.com",
+                PromisedLeadTimeDays = 5,
+                IsActive = true
+            },
+            new Supplier
+            {
+                Id = supplier2Id,
+                Name = "GlobalStock Ltd.",
+                Email = "procurement@globalstock.com",
+                PromisedLeadTimeDays = 7,
+                IsActive = true
+            },
+            new Supplier
+            {
+                Id = supplier3Id,
+                Name = "OverseasGoods Inc.",
+                Email = "supply@overseasgoods.com",
+                PromisedLeadTimeDays = 14,
+                IsActive = true
             }
         );
     }

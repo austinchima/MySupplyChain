@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MySupplyChain.Infrastructure.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MySupplyChain.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260606001349_AddSupplierLeadTimeTracking")]
+    partial class AddSupplierLeadTimeTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -463,36 +466,6 @@ namespace MySupplyChain.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MySupplyChain.Domain.Entities.SupplyChainEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AggregateId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("AggregateType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SupplyChainEvents");
-                });
-
             modelBuilder.Entity("MySupplyChain.Domain.Entities.User", b =>
                 {
                     b.Property<string>("Id")
@@ -566,7 +539,7 @@ namespace MySupplyChain.Infrastructure.Migrations
                         {
                             Id = "8e445865-a24d-4543-a6c6-9443d048cdb9",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "f844a575-4e45-4755-942d-1527a71ade5c",
+                            ConcurrencyStamp = "84cd7275-6c5e-4251-abe7-363272f69fb3",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@mysupplychain.com",
                             EmailConfirmed = true,
@@ -584,7 +557,7 @@ namespace MySupplyChain.Infrastructure.Migrations
                         {
                             Id = "3b333929-f974-444e-a8d3-68f50a356d51",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "afc9a42f-9520-4e1d-b294-f12d43ae4024",
+                            ConcurrencyStamp = "eb259a72-1967-4edd-a357-a7d4e7e10301",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "user@mysupplychain.com",
                             EmailConfirmed = true,

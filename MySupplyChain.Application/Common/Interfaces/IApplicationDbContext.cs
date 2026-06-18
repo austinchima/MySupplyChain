@@ -12,7 +12,10 @@ public interface IApplicationDbContext
     DbSet<SalesHistory> SalesHistories { get; }
     DbSet<ReorderRequest> ReorderRequests { get; }
     DbSet<Order> Orders { get; }
+    DbSet<OrderItem> OrderItems { get; }
     DbSet<Customer> Customers { get; }
+    DbSet<Supplier> Suppliers { get; }
+    DbSet<SupplyChainEvent> SupplyChainEvents { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

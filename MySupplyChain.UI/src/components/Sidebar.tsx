@@ -14,6 +14,7 @@ const mainNavItems: NavItem[] = [
   { to: "/inventory", icon: "inventory_2", label: "Inventory" },
   { to: "/forecasting", icon: "monitoring", label: "Forecasting" },
   { to: "/orders", icon: "receipt_long", label: "Orders" },
+  { to: "/suppliers", icon: "local_shipping", label: "Supplier KPIs" },
 ];
 
 function SidebarLink({ to, icon, label }: NavItem) {

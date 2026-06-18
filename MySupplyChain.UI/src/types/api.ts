@@ -107,3 +107,16 @@ export interface ImportSummaryDto {
   recordsImported: number;
   newProductsCreated: number;
 }
+
+/** Mirrors: MySupplyChain.Application.Suppliers.Queries.GetSupplierKpi.SupplierKpiDto */
+export interface SupplierKpiDto {
+  supplierId: string;
+  supplierName: string;
+  promisedLeadTimeDays: number;
+  /** Average actual lead time in days. Null if no orders received yet. */
+  avgActualLeadTimeDays: number | null;
+  /** Percentage of orders delivered on time. Null if no orders received yet. */
+  onTimePercentage: number | null;
+  totalOrdersReceived: number;
+}
+

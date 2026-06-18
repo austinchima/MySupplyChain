@@ -13,6 +13,7 @@ import type {
   RegisterRequest,
   AuthResponse,
   ImportSummaryDto,
+  SupplierKpiDto,
 } from "../types/api";
 
 // In production (Vercel), VITE_API_BASE_URL or VITE_API_URL is set to the Render backend URL
@@ -188,3 +189,11 @@ export const salesHistories = {
       body: formData,
     }),
 };
+
+// ─── Suppliers ────────────────────────────────────────────────────────────
+
+export const suppliers = {
+  /** GET /api/suppliers/kpi → SupplierKpiDto[] */
+  getKpi: () => request<SupplierKpiDto[]>("/suppliers/kpi"),
+};
+

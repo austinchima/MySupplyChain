@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MySupplyChain.Application.Common.Interfaces;
 using MySupplyChain.Infrastructure.Authentication;
+using MySupplyChain.Infrastructure.BackgroundServices;
 using MySupplyChain.Infrastructure.MachineLearning;
 using MySupplyChain.Infrastructure.Persistence;
 
@@ -43,6 +44,12 @@ public static class DependencyInjection
             var logger = provider.GetRequiredService<ILogger<DemandForecaster>>();
             return new DemandForecaster(modelPath, logger);
         });
+
+        // Register Event Ingestion Channel & Background Worker
+        var channel = new EventIngestionChannel();
+        services.AddSingleton<IEventIngestionChannel>(channel);
+        services.AddSingleton(channel); // Also register concrete type for the worker to resolve
+        services.AddHostedService<AllocationProcessingWorker>();
 
         // Register Authentication services
         var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();

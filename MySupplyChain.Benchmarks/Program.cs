@@ -194,7 +194,8 @@ public class CommandHandlerBenchmarks
     [Benchmark(Description = "CreateOrderCommandHandler (no reorder triggered)")]
     public async Task<int> CreateOrder()
     {
-        var handler = new CreateOrderCommandHandler(_db, _forecasterMock.Object);
+        var channelMock = new Mock<IEventIngestionChannel>();
+        var handler = new CreateOrderCommandHandler(_db, channelMock.Object);
         return await handler.Handle(
             new CreateOrderCommand(_seededProductId, 1),
             CancellationToken.None);

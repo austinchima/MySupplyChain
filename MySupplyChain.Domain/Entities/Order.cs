@@ -42,4 +42,23 @@ public class Order : EntityBase
     /// Gets or sets the collection of individual line items purchased within this transaction.
     /// </summary>
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+
+    // ── Supplier Lead Time Tracking ───────────────────────────────────────────
+
+    /// <summary>Optional FK to the Supplier who fulfilled this order.</summary>
+    public Guid? SupplierId { get; set; }
+
+    /// <summary>
+    /// The UTC timestamp when this order was marked as received/delivered.
+    /// Set by the handler when Status transitions to Delivered.
+    /// </summary>
+    public DateTime? ReceivedDate { get; set; }
+
+    /// <summary>
+    /// The calculated lead time in calendar days: (ReceivedDate - OrderDate).Days.
+    /// Null until the order is marked as received.
+    /// // TODO: ME - CODE THIS — populate in your UpdateOrderCommandHandler when Status == Delivered.
+    /// </summary>
+    public int? ActualLeadTimeDays { get; set; }
 }
+

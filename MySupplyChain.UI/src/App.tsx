@@ -5,6 +5,7 @@ import Dashboard from "./pages/MySupplyChainDashboard";
 import InventoryList from "./pages/ProductInventoryList";
 import ForecastingDetail from "./pages/AIDemandForecastingDetail";
 import Orders from "./pages/Orders";
+import SupplierKpiPage from "./pages/SupplierKpiPage";
 import LandingPage from "./pages/LandingPage";
 import { isAuthenticated, setToken } from "./lib/auth";
 import { auth } from "./lib/api";
@@ -425,6 +426,7 @@ function App() {
           <Route path="/inventory" element={<InventoryList />} />
           <Route path="/forecasting" element={<ForecastingDetail />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/suppliers" element={<SupplierKpiPage />} />
         </Route>
 
         {/* Catch-all Redirect */}
