@@ -10,7 +10,62 @@ A production-grade supply chain management system engineered as a **portfolio sh
 
 ## Architecture
 
+### High-Level System Design
+
+```mermaid
+graph TD
+    Client[React 19 SPA<br/>Tailwind CSS] -->|REST API / JWT| API[ASP.NET Core 10 API]
+    
+    subgraph "Backend System"
+        API -->|CQRS Commands & Queries| MediatR[MediatR Pipeline]
+        MediatR -->|Read Path| Queries[Query Handlers]
+        MediatR -->|Write Path| Commands[Command Handlers]
+        
+        Commands -->|Writes| EF[EF Core ORM]
+        Queries -->|Reads| EF
+        
+        Commands -.->|Events| Channel[Event Ingestion Channel]
+        Channel -.->|Background processing| Worker[Allocation Processing Worker]
+        Worker -->|Updates Materialized Views| EF
+        
+        ML[ML.NET SSA Forecaster]
+        Queries -->|Forecast Requests| ML
+        Worker -->|Training Data| ML
+    end
+    
+    EF -->|TCP/IP| DB[(PostgreSQL 16)]
 ```
+
+### Component-Level Write Flow
+
+```mermaid
+sequenceDiagram
+    participant UI as React UI
+    participant API as API Controller
+    participant MediatR as MediatR
+    participant Handler as Command Handler
+    participant DB as PostgreSQL
+    participant Channel as Ingestion Channel
+    participant Worker as Background Worker
+
+    UI->>API: HTTP POST /api/orders
+    API->>MediatR: Send(CreateOrderCommand)
+    MediatR->>Handler: Handle(Command)
+    Handler->>DB: SaveChangesAsync()
+    DB-->>Handler: Success
+    Handler->>Channel: Publish(OrderCreatedEvent)
+    Handler-->>MediatR: Return Order ID
+    MediatR-->>API: 
+    API-->>UI: 200 OK
+
+    %% Background Processing
+    Channel-->>Worker: Consume(OrderCreatedEvent)
+    Worker->>DB: Update Materialized Allocation Views
+```
+
+### Project Structure
+
+```text
 MySupplyChain/
 ├── MySupplyChain.UI              # React 19 SPA, Tailwind CSS, Glassmorphism UI
 ├── MySupplyChain.Domain          # Entities, enums, value objects (zero dependencies)
@@ -21,6 +76,7 @@ MySupplyChain/
 ├── MySupplyChain.Tests           # Unit + integration tests (Passing suite)
 └── graphify-out/                 # Standard AST knowledge graph metadata and visualization
 ```
+
 
 ### Key Design Decisions
 
