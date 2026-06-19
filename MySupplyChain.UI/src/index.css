@@ -203,3 +203,8 @@ option {
   background-color: var(--color-surface);
   color: var(--color-on-surface);
 }
+
+/* Hide default cursor globally since we have a custom cursor */
+* {
+  cursor: none !important;
+}

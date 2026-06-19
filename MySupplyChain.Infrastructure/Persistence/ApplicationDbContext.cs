@@ -23,6 +23,7 @@ public class ApplicationDbContext(
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<SupplyChainEvent> SupplyChainEvents => Set<SupplyChainEvent>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // User DbSet is inherited from IdentityDbContext
 
@@ -139,6 +140,7 @@ public class ApplicationDbContext(
         modelBuilder.Entity<Order>().HasQueryFilter(e => e.UserId == CurrentUserId);
         modelBuilder.Entity<Customer>().HasQueryFilter(e => e.UserId == CurrentUserId);
         modelBuilder.Entity<OrderItem>().HasQueryFilter(e => e.UserId == CurrentUserId);
+        modelBuilder.Entity<RefreshToken>().HasQueryFilter(e => e.UserId == CurrentUserId);
 
         // SEED DATA
         var staticDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);

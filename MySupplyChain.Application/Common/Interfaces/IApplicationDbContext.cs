@@ -16,6 +16,7 @@ public interface IApplicationDbContext
     DbSet<Customer> Customers { get; }
     DbSet<Supplier> Suppliers { get; }
     DbSet<SupplyChainEvent> SupplyChainEvents { get; }
+    DbSet<RefreshToken> RefreshTokens { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

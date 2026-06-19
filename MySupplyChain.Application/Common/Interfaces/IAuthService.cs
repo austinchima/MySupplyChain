@@ -19,7 +19,7 @@ public interface IAuthService
     /// <summary>
     /// Used by LoginQueryHandler
     /// </summary>
-    Task<string?> LoginAsync(string usernameOrEmail, string password);
+    Task<MySupplyChain.Application.Auth.Common.AuthResult?> LoginAsync(string usernameOrEmail, string password, string deviceInfo = "");
 
     /// <summary>
     /// Used by DeleteAccountCommandHandler
@@ -30,6 +30,10 @@ public interface IAuthService
     /// Updates the user's username after verifying the current password. Returns a new JWT token.
     /// </summary>
     Task<string> UpdateUsernameAsync(string userId, string newUsername, string currentPassword);
+
+    Task<MySupplyChain.Application.Auth.Common.AuthResult> RefreshAsync(string refreshToken, string deviceInfo);
+    
+    Task RevokeAsync(string refreshToken);
 
     string GenerateJwtToken(User user);
 }

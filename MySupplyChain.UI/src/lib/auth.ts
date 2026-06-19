@@ -1,15 +1,15 @@
-const TOKEN_KEY = "supplychain_jwt";
+let _accessToken: string | null = null;
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  return _accessToken;
 }
 
-export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+export function setToken(token: string | null): void {
+  _accessToken = token;
 }
 
 export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  _accessToken = null;
 }
 
 /** Buffer before actual expiry to proactively clear the token (5 minutes) */
@@ -23,9 +23,7 @@ export function isAuthenticated(): boolean {
     const payload = JSON.parse(atob(token.split(".")[1]));
     const expiresIn = payload.exp * 1000 - Date.now();
 
-    // Clear token if expired or within buffer of expiry
     if (expiresIn < EXPIRY_BUFFER_MS) {
-      clearToken();
       return false;
     }
 
@@ -49,12 +47,6 @@ export function getUserFromToken(): TokenUser | null {
 
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    const expiresIn = payload.exp * 1000 - Date.now();
-
-    if (expiresIn < EXPIRY_BUFFER_MS) {
-      clearToken();
-      return null;
-    }
 
     return {
       id: payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ?? "",

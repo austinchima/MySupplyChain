@@ -11,7 +11,7 @@ namespace MySupplyChain.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IMediator mediator) : ControllerBase
+public class AuthController(IMediator mediator, IWebHostEnvironment env) : ControllerBase
 {
     /// <summary>
     /// Register a new user
@@ -49,10 +49,27 @@ public class AuthController(IMediator mediator) : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult> Login(LoginQuery query)
+    public async Task<ActionResult> Login(LoginRequest request)
     {
-        var token = await mediator.Send(query);
-        return Ok(new { Token = token, Message = "Login successful" });
+        var deviceInfo = Request.Headers.UserAgent.ToString() ?? "";
+        var query = new LoginQuery(request.UsernameOrEmail, request.Password, deviceInfo);
+        var authResult = await mediator.Send(query);
+
+        if (authResult == null) return Unauthorized(new { Message = "Invalid credentials" });
+
+        var isDev = env.IsDevelopment();
+        var options = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !isDev,
+            SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.Strict,
+            Path = "/api/auth",
+            Expires = DateTime.UtcNow.AddDays(7)
+        };
+
+        Response.Cookies.Append("refreshToken", authResult.RefreshToken, options);
+
+        return Ok(new { Token = authResult.AccessToken, Message = "Login successful" });
     }
 
     /// <summary>
@@ -101,6 +118,59 @@ public class AuthController(IMediator mediator) : ControllerBase
         var token = await mediator.Send(new MySupplyChain.Application.Auth.Commands.UpdateUsername.UpdateUsernameCommand(userId, dto.NewUsername, dto.CurrentPassword));
         return Ok(new { Token = token, Message = "Username updated successfully" });
     }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult> Refresh()
+    {
+        var rawToken = Request.Cookies["refreshToken"];
+        if (string.IsNullOrWhiteSpace(rawToken))
+        {
+            return Unauthorized(new { Message = "Refresh token is required." });
+        }
+
+        var deviceInfo = Request.Headers.UserAgent.ToString() ?? "";
+        try
+        {
+            var authResult = await mediator.Send(new MySupplyChain.Application.Auth.Commands.RefreshToken.RefreshTokenCommand(rawToken, deviceInfo));
+            
+            var isDev = env.IsDevelopment();
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !isDev,
+                SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.Strict,
+                Path = "/api/auth",
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+
+            Response.Cookies.Append("refreshToken", authResult.RefreshToken, options);
+
+            return Ok(new { Token = authResult.AccessToken, Message = "Refresh successful" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Response.Cookies.Delete("refreshToken", new CookieOptions { Path = "/api/auth" });
+            return Unauthorized(new { Message = ex.Message });
+        }
+    }
+
+    [HttpPost("revoke")]
+    [Authorize]
+    public async Task<ActionResult> Revoke()
+    {
+        var rawToken = Request.Cookies["refreshToken"];
+        if (!string.IsNullOrWhiteSpace(rawToken))
+        {
+            await mediator.Send(new MySupplyChain.Application.Auth.Commands.RevokeToken.RevokeTokenCommand(rawToken));
+        }
+
+        Response.Cookies.Delete("refreshToken", new CookieOptions { Path = "/api/auth" });
+        return Ok(new { Message = "Token revoked successfully." });
+    }
 }
 
 public record UpdateUsernameDto(string NewUsername, string CurrentPassword);
+public record LoginRequest(string UsernameOrEmail, string Password);

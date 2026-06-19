@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MySupplyChain.Application.Common.Interfaces;
@@ -15,7 +16,8 @@ namespace MySupplyChain.Infrastructure.Authentication;
 public class AuthService(
     UserManager<User> userManager,
     SignInManager<User> signInManager,
-    IOptions<JwtSettings> jwtSettings)
+    IOptions<JwtSettings> jwtSettings,
+    IApplicationDbContext dbContext)
     : IAuthService
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
@@ -54,7 +56,7 @@ public class AuthService(
         return user;
     }
 
-    public async Task<string?> LoginAsync(string usernameOrEmail, string password)
+    public async Task<MySupplyChain.Application.Auth.Common.AuthResult?> LoginAsync(string usernameOrEmail, string password, string deviceInfo = "")
     {
         // Resolve user by email only (usernames are not unique)
         var user = await userManager.FindByEmailAsync(usernameOrEmail);
@@ -72,8 +74,29 @@ public class AuthService(
             return null;
         }
 
+        var accessToken = GenerateJwtToken(user);
+        var rawRefreshToken = GenerateRefreshToken();
+
+        var refreshTokenEntity = new RefreshToken
+        {
+            Token = HashToken(rawRefreshToken),
+            UserId = user.Id,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiryDays),
+            DeviceInfo = deviceInfo,
+            RememberMe = true
+        };
+
+        dbContext.SetTenantContext(user.Id);
+        dbContext.RefreshTokens.Add(refreshTokenEntity);
+        await dbContext.SaveChangesAsync();
+
         // Generate JWT token
-        return GenerateJwtToken(user);
+        return new MySupplyChain.Application.Auth.Common.AuthResult
+        {
+            AccessToken = accessToken,
+            RefreshToken = rawRefreshToken
+        };
     }
 
     public async Task DeleteAccountAsync(string userId)
@@ -133,5 +156,97 @@ public class AuthService(
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public async Task<MySupplyChain.Application.Auth.Common.AuthResult> RefreshAsync(string refreshToken, string deviceInfo)
+    {
+        var tokenHash = HashToken(refreshToken);
+        
+        dbContext.ClearTenantContext();
+        
+        var storedToken = await dbContext.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt => rt.Token == tokenHash);
+
+        if (storedToken == null)
+        {
+            throw new UnauthorizedAccessException("Invalid refresh token.");
+        }
+
+        if (storedToken.IsRevoked)
+        {
+            var activeTokens = await dbContext.RefreshTokens
+                .Where(rt => rt.UserId == storedToken.UserId && rt.RevokedAt == null)
+                .ToListAsync();
+
+            foreach (var t in activeTokens)
+            {
+                t.RevokedAt = DateTime.UtcNow;
+            }
+            await dbContext.SaveChangesAsync();
+
+            throw new UnauthorizedAccessException("Token reuse detected. All sessions revoked.");
+        }
+
+        if (storedToken.IsExpired)
+        {
+            throw new UnauthorizedAccessException("Refresh token has expired.");
+        }
+
+        var user = storedToken.User;
+        var newRawToken = GenerateRefreshToken();
+        var newTokenHash = HashToken(newRawToken);
+
+        storedToken.RevokedAt = DateTime.UtcNow;
+        storedToken.ReplacedByToken = newTokenHash;
+
+        var newRefreshToken = new RefreshToken
+        {
+            Token = newTokenHash,
+            UserId = user.Id,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiryDays),
+            DeviceInfo = deviceInfo,
+            RememberMe = storedToken.RememberMe
+        };
+
+        dbContext.SetTenantContext(user.Id);
+        dbContext.RefreshTokens.Add(newRefreshToken);
+        await dbContext.SaveChangesAsync();
+
+        return new MySupplyChain.Application.Auth.Common.AuthResult
+        {
+            AccessToken = GenerateJwtToken(user),
+            RefreshToken = newRawToken
+        };
+    }
+
+    public async Task RevokeAsync(string refreshToken)
+    {
+        var tokenHash = HashToken(refreshToken);
+        dbContext.ClearTenantContext();
+
+        var storedToken = await dbContext.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Token == tokenHash);
+
+        if (storedToken is { IsActive: true })
+        {
+            storedToken.RevokedAt = DateTime.UtcNow;
+            await dbContext.SaveChangesAsync();
+        }
+    }
+
+    private static string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    private static string HashToken(string token)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token));
+        return Convert.ToBase64String(bytes);
     }
 }

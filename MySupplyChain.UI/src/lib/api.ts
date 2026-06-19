@@ -1,4 +1,4 @@
-import { getToken } from "./auth";
+import { getToken, setToken, clearToken } from "./auth";
 import type {
   ProductDto,
   ProductForecastDto,
@@ -28,8 +28,6 @@ const getBaseUrl = (): string => {
 };
 const BASE = getBaseUrl();
 
-
-
 // ─── Generic fetch wrapper with JWT injection ──────────────────────────────
 
 function createApiError(status: number, message: string): Error {
@@ -39,28 +37,97 @@ function createApiError(status: number, message: string): Error {
   return err;
 }
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(token: string) {
+  refreshSubscribers.map((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
+export async function refreshAccessToken(): Promise<string> {
+  const res = await fetch(`${BASE}/auth/refresh`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include"
+  });
+
+  if (!res.ok) {
+    throw new Error("Refresh token expired or invalid");
+  }
+
+  const data = await res.json();
+  const newToken = data.token;
+  setToken(newToken);
+  return newToken;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
   const token = getToken();
-  const headers: Record<string, string> = {
-    ...((options.headers as Record<string, string>) ?? {}),
-  };
+  const headers = new Headers(options.headers || {});
 
   if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
   }
 
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(`${BASE}${path}`, {
+  const fetchOptions: RequestInit = {
     ...options,
     headers,
     cache: "no-store",
-  });
+    credentials: "include"
+  };
+
+  let res = await fetch(`${BASE}${path}`, fetchOptions);
+
+  if (res.status === 401 && path !== "/auth/login" && path !== "/auth/refresh" && path !== "/auth/register") {
+    if (isRefreshing) {
+      return new Promise((resolve) => {
+        subscribeTokenRefresh((newToken) => {
+          headers.set("Authorization", `Bearer ${newToken}`);
+          resolve(fetch(`${BASE}${path}`, { ...fetchOptions, headers }).then(async r => {
+            if (!r.ok) {
+               const body = await r.text();
+               throw createApiError(r.status, body || r.statusText);
+            }
+            if (r.status === 204) return undefined as T;
+            return r.json();
+          }));
+        });
+      });
+    }
+
+    isRefreshing = true;
+
+    try {
+      const newToken = await refreshAccessToken();
+      isRefreshing = false;
+      onRefreshed(newToken);
+
+      headers.set("Authorization", `Bearer ${newToken}`);
+      res = await fetch(`${BASE}${path}`, { ...fetchOptions, headers });
+    } catch (err) {
+      isRefreshing = false;
+      refreshSubscribers = [];
+      clearToken();
+      window.dispatchEvent(new Event("auth-expired"));
+      throw err;
+    }
+  }
 
   if (!res.ok) {
     const body = await res.text();
@@ -76,17 +143,33 @@ async function request<T>(
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
 export const auth = {
-  login: (data: LoginRequest) =>
-    request<AuthResponse>("/auth/login", {
+  login: async (data: LoginRequest) => {
+    const res = await request<AuthResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
-    }),
+    });
+    setToken(res.token);
+    return res;
+  },
 
-  register: (data: RegisterRequest) =>
-    request<AuthResponse>("/auth/register", {
+  register: async (data: RegisterRequest) => {
+    const res = await request<AuthResponse>("/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
-    }),
+    });
+    if (res.token) setToken(res.token);
+    return res;
+  },
+
+  logout: async () => {
+    try {
+      await request<void>("/auth/revoke", { method: "POST" });
+    } catch (e) {
+      // Ignore errors on logout
+    } finally {
+      clearToken();
+    }
+  },
 
   resetLedger: () =>
     request<void>("/auth/reset-ledger", {
@@ -98,11 +181,14 @@ export const auth = {
       method: "DELETE",
     }),
 
-  updateUsername: (newUsername: string, currentPassword: string) =>
-    request<AuthResponse>("/auth/username", {
+  updateUsername: async (newUsername: string, currentPassword: string) => {
+    const res = await request<AuthResponse>("/auth/username", {
       method: "PUT",
       body: JSON.stringify({ newUsername, currentPassword }),
-    }),
+    });
+    if (res.token) setToken(res.token);
+    return res;
+  }
 };
 
 // ─── Products ──────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import InventoryList from "./pages/ProductInventoryList";
 import ForecastingDetail from "./pages/AIDemandForecastingDetail";
 import Orders from "./pages/Orders";
 import SupplierKpiPage from "./pages/SupplierKpiPage";
-import LandingPage from "./pages/LandingPage";
+import LandingPage, { CustomCursor } from "./pages/LandingPage";
 import { isAuthenticated, setToken } from "./lib/auth";
 import { auth } from "./lib/api";
 
@@ -416,6 +416,7 @@ function App() {
 
   return (
     <Router>
+      <CustomCursor />
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<LandingPage />} />
