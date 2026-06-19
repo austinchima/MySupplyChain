@@ -19,4 +19,7 @@ public interface IApplicationDbContext
     DbSet<RefreshToken> RefreshTokens { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    void SetTenantContext(string userId);
+    void ClearTenantContext();
 }

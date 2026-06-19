@@ -41,7 +41,7 @@ public class AuthController(IMediator mediator, IWebHostEnvironment env) : Contr
     /// <remarks>
     /// Authenticates a user and returns a JWT token for accessing protected endpoints.
     /// </remarks>
-    /// <param name="query">The login credentials including email and password.</param>
+    /// <param name="request">The login credentials including email and password.</param>
     /// <returns>A JWT token and success message.</returns>
     /// <response code="200">Login successful and token returned</response>
     /// <response code="401">Invalid credentials</response>

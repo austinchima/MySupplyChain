@@ -18,26 +18,26 @@ public class LoginQueryHandlerTests
     public async Task Handle_ShouldReturnToken_WhenCredentialsAreCorrect()
     {
         // Arrange
-        var query = new LoginQuery("user@example.com", "Password123!");
-        var expectedToken = "valid.jwt.token";
+        var query = new LoginQuery("user@example.com", "Password123!", "device1");
+        var expectedResult = new MySupplyChain.Application.Auth.Common.AuthResult { AccessToken = "valid.jwt.token", RefreshToken = "valid.refresh.token" };
         
-        _authServiceMock.Setup(x => x.LoginAsync(query.UsernameOrEmail, query.Password))
-            .ReturnsAsync(expectedToken);
+        _authServiceMock.Setup(x => x.LoginAsync(query.UsernameOrEmail, query.Password, query.DeviceInfo))
+            .ReturnsAsync(expectedResult);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Should().Be(expectedToken);
+        result.Should().BeEquivalentTo(expectedResult);
     }
 
     [Fact]
     public async Task Handle_ShouldThrowUnauthorizedAccessException_WhenLoginFails()
     {
         // Arrange
-        var query = new LoginQuery("wrong@example.com", "bad");
-        _authServiceMock.Setup(x => x.LoginAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync((string?)null);
+        var query = new LoginQuery("wrong@example.com", "bad", "device1");
+        _authServiceMock.Setup(x => x.LoginAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((MySupplyChain.Application.Auth.Common.AuthResult?)null);
 
         // Act
         Func<Task> act = async () => await _handler.Handle(query, CancellationToken.None);

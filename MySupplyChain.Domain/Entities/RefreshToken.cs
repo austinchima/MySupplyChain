@@ -10,7 +10,7 @@ namespace MySupplyChain.Domain.Entities;
 public class RefreshToken : EntityBase
 {
     [Key]
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public new Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
     /// SHA-256 hash of the actual refresh token value.
@@ -24,12 +24,12 @@ public class RefreshToken : EntityBase
     /// Foreign key to the user who owns this token.
     /// </summary>
     [Required]
-    public string UserId { get; set; } = string.Empty;
+    public new string UserId { get; set; } = string.Empty;
 
     [ForeignKey(nameof(UserId))]
     public User User { get; set; } = null!;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public new DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime ExpiresAt { get; set; }
 
