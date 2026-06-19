@@ -1185,7 +1185,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="relative bg-background min-h-screen text-on-surface selection:bg-secondary/30 selection:text-white">
+    <div className="relative bg-background min-h-screen text-on-surface selection:bg-secondary/30 selection:text-white cursor-none [&_*]:cursor-none">
       <CustomCursor />
       <Navbar />
       <main>

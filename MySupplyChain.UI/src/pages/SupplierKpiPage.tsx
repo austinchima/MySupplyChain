@@ -6,12 +6,7 @@ import type { SupplierKpiDto } from "../types/api";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function onTimeColor(pct: number | null): string {
-  if (pct === null) return "text-on-surface-variant";
-  if (pct >= 90) return "text-green-400";
-  if (pct >= 70) return "text-yellow-400";
-  return "text-error";
-}
+
 
 function onTimeBadge(pct: number | null): string {
   if (pct === null) return "bg-surface-container-highest text-on-surface-variant";
