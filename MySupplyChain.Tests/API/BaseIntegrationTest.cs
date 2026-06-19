@@ -69,6 +69,10 @@ public abstract class BaseIntegrationTest : IClassFixture<WebApplicationFactory<
         forecasterMock.Setup(f => f.PredictDemandAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<IEnumerable<float>>(), It.IsAny<int>()))
             .ReturnsAsync(mockForecast);
         services.AddSingleton(forecasterMock.Object);
+
+        // Mock EventIngestionChannel since AddInfrastructure is skipped in tests
+        var channelMock = new Mock<IEventIngestionChannel>();
+        services.AddSingleton(channelMock.Object);
     }
 
     protected async Task<HttpClient> GetAuthenticatedClientAsync(string username = "testuser", string password = "Password123!")

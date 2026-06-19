@@ -12,6 +12,14 @@ public class UpdateOrderCommandHandler(IApplicationDbContext context) : IRequest
     {
         var order = await context.Orders.FindAsync([request.Id], cancellationToken);
         if (order == null) return;
+        if (request.Status == OrderStatus.Delivered && order.Status != OrderStatus.Delivered)
+        {
+            order.ReceivedDate = DateTime.UtcNow;
+            if (order.OrderDate != default)
+            {
+                order.ActualLeadTimeDays = (int)(order.ReceivedDate.Value - order.OrderDate).TotalDays;
+            }
+        }
 
         order.Status = request.Status;
         order.UpdatedAt = DateTime.UtcNow;
