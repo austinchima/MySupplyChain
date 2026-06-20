@@ -8,11 +8,11 @@ public class LoginQueryHandler(IAuthService authService) : IRequestHandler<Login
 {
     public async Task<AuthResult?> Handle(LoginQuery request, CancellationToken cancellationToken)
     {
-        var result = await authService.LoginAsync(request.UsernameOrEmail, request.Password, request.DeviceInfo);
+        var result = await authService.LoginAsync(request.Email, request.Password, request.DeviceInfo);
         
         if (result == null)
         {
-            throw new UnauthorizedAccessException("Invalid username or password.");
+            throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         return result;

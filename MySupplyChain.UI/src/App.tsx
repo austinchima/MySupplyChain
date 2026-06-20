@@ -11,8 +11,8 @@ import { isAuthenticated, setToken } from "./lib/auth";
 import { auth } from "./lib/api";
 
 interface LoginGateProps {
-  usernameOrEmail: string;
-  setUsernameOrEmail: (v: string) => void;
+  email: string;
+  setEmail: (v: string) => void;
   password: string;
   setPassword: (v: string) => void;
   signUpUsername: string;
@@ -28,8 +28,8 @@ interface LoginGateProps {
 }
 
 function LoginGate({
-  usernameOrEmail,
-  setUsernameOrEmail,
+  email,
+  setEmail,
   password,
   setPassword,
   signUpUsername,
@@ -148,8 +148,8 @@ function LoginGate({
                   <input
                     type="email"
                     autoComplete="username"
-                    value={usernameOrEmail}
-                    onChange={(e) => setUsernameOrEmail(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
                     className="w-full bg-[#0d0e12]/70 border border-outline-variant/30 focus:border-primary/50 rounded-xl py-3.5 pl-11 pr-4 text-sm text-on-surface placeholder:text-outline/40 focus:outline-none transition-all duration-200"
                     required={activeTab === 'signin'}
@@ -271,7 +271,7 @@ function LoginGate({
 function App() {
   const [isAuth, setIsAuth] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [usernameOrEmail, setUsernameOrEmail] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   
   const [signUpUsername, setSignUpUsername] = useState<string>("");
@@ -280,7 +280,7 @@ function App() {
 
   const [error, setError] = useState<string | null>(null);
 
-  const attemptLogin = async (credentials: { usernameOrEmail: string; password: string }, isSilent = false) => {
+  const attemptLogin = async (credentials: { email: string; password: string }, isSilent = false) => {
     setError(null);
     try {
       const res = await auth.login(credentials);
@@ -292,7 +292,7 @@ function App() {
       console.error("Login attempt failed:", err);
       if (!isSilent) {
         if (errorObj.status === 401) {
-          setError("Invalid credentials. Please verify your username and password.");
+          setError("Invalid credentials. Please verify your email and password.");
         } else {
           setError(
             "We are unable to establish a connection to the secure gateway. Please verify your internet connection or contact corporate IT at support@mysupplychain.com."
@@ -316,12 +316,18 @@ function App() {
 
   const handleSignIn = async () => {
     setError(null);
-    if (!usernameOrEmail.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       setError("Please fill out all fields.");
       return;
     }
+    // Client-side email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
     setLoading(true);
-    await attemptLogin({ usernameOrEmail, password });
+    await attemptLogin({ email: email.trim(), password });
     setLoading(false);
   };
 
@@ -329,6 +335,12 @@ function App() {
     setError(null);
     if (!signUpUsername.trim() || !signUpEmail.trim() || !signUpPassword.trim()) {
       setError("Please fill out all fields.");
+      return;
+    }
+    // Client-side email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(signUpEmail.trim())) {
+      setError("Please enter a valid email address.");
       return;
     }
     setLoading(true);
@@ -339,7 +351,7 @@ function App() {
         password: signUpPassword
       });
       // Register does not return a token, so we must log in immediately after using the email address
-      await attemptLogin({ usernameOrEmail: signUpEmail.trim(), password: signUpPassword });
+      await attemptLogin({ email: signUpEmail.trim(), password: signUpPassword });
     } catch (err) {
       console.error("Sign up failed:", err);
       const errorObj = err as { message?: string; status?: number };
@@ -398,8 +410,8 @@ function App() {
 
   // Common props for the LoginGate
   const loginGateProps = {
-    usernameOrEmail,
-    setUsernameOrEmail,
+    email,
+    setEmail,
     password,
     setPassword,
     signUpUsername,

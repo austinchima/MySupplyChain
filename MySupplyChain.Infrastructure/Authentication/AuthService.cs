@@ -56,10 +56,10 @@ public class AuthService(
         return user;
     }
 
-    public async Task<MySupplyChain.Application.Auth.Common.AuthResult?> LoginAsync(string usernameOrEmail, string password, string deviceInfo = "")
+    public async Task<MySupplyChain.Application.Auth.Common.AuthResult?> LoginAsync(string email, string password, string deviceInfo = "")
     {
         // Resolve user by email only (usernames are not unique)
-        var user = await userManager.FindByEmailAsync(usernameOrEmail);
+        var user = await userManager.FindByEmailAsync(email);
 
         if (user == null)
         {

@@ -90,7 +90,7 @@ public abstract class BaseIntegrationTest : IClassFixture<WebApplicationFactory<
         // 2. Login to get token
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", new
         {
-            UsernameOrEmail = $"{username}@example.com",
+            Email = $"{username}@example.com",
             Password = password
         });
 

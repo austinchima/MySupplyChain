@@ -75,7 +75,7 @@ export interface CreateOrderRequest {
 
 /** Mirrors: LoginQuery */
 export interface LoginRequest {
-  usernameOrEmail: string;
+  email: string;
   password: string;
 }
 

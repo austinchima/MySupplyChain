@@ -21,7 +21,7 @@ public class LoginQueryHandlerTests
         var query = new LoginQuery("user@example.com", "Password123!", "device1");
         var expectedResult = new MySupplyChain.Application.Auth.Common.AuthResult { AccessToken = "valid.jwt.token", RefreshToken = "valid.refresh.token" };
         
-        _authServiceMock.Setup(x => x.LoginAsync(query.UsernameOrEmail, query.Password, query.DeviceInfo))
+        _authServiceMock.Setup(x => x.LoginAsync(query.Email, query.Password, query.DeviceInfo))
             .ReturnsAsync(expectedResult);
 
         // Act

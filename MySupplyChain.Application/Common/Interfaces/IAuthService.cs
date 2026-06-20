@@ -19,7 +19,7 @@ public interface IAuthService
     /// <summary>
     /// Used by LoginQueryHandler
     /// </summary>
-    Task<MySupplyChain.Application.Auth.Common.AuthResult?> LoginAsync(string usernameOrEmail, string password, string deviceInfo = "");
+    Task<MySupplyChain.Application.Auth.Common.AuthResult?> LoginAsync(string email, string password, string deviceInfo = "");
 
     /// <summary>
     /// Used by DeleteAccountCommandHandler

@@ -295,7 +295,6 @@ public class QueryHandlerBenchmarks
 public class CsvParsingBenchmarks
 {
     private string _dataPath = null!;
-    private string _samplePath = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -305,19 +304,10 @@ public class CsvParsingBenchmarks
         while (dir != null && !dir.GetFiles("*.slnx").Any() && !dir.GetFiles("*.sln").Any())
             dir = dir.Parent;
 
-        _dataPath   = Path.Combine(dir?.FullName ?? ".", "data", "train.csv");
-        _samplePath = Path.Combine(dir?.FullName ?? ".", "data", "test.csv");
+        _dataPath   = Path.Combine(dir?.FullName ?? ".", "data", "Retail-Supply-Chain-Sales-Dataset.csv");
     }
 
-    [Benchmark(Description = "Parse test.csv (~45K rows)")]
-    public int ParseSmallCsv()
-    {
-        if (!File.Exists(_samplePath)) return 0;
-        return File.ReadLines(_samplePath).Skip(1)
-            .Count(line => line.Split(',').Length >= 4);
-    }
-
-    [Benchmark(Description = "Parse train.csv (913K rows, 17MB)")]
+    [Benchmark(Description = "Parse dataset (9K+ rows, 2.4MB)")]
     public int ParseFullDataset()
     {
         if (!File.Exists(_dataPath)) return 0;

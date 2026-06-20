@@ -52,7 +52,7 @@ public class AuthController(IMediator mediator, IWebHostEnvironment env) : Contr
     public async Task<ActionResult> Login(LoginRequest request)
     {
         var deviceInfo = Request.Headers.UserAgent.ToString() ?? "";
-        var query = new LoginQuery(request.UsernameOrEmail, request.Password, deviceInfo);
+        var query = new LoginQuery(request.Email, request.Password, deviceInfo);
         var authResult = await mediator.Send(query);
 
         if (authResult == null) return Unauthorized(new { Message = "Invalid credentials" });
@@ -173,4 +173,9 @@ public class AuthController(IMediator mediator, IWebHostEnvironment env) : Contr
 }
 
 public record UpdateUsernameDto(string NewUsername, string CurrentPassword);
-public record LoginRequest(string UsernameOrEmail, string Password);
+public record LoginRequest(
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "A valid email address is required.")]
+    string Email,
+    [System.ComponentModel.DataAnnotations.Required]
+    string Password);
