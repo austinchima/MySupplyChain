@@ -4,7 +4,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A production-grade supply chain management system engineered as a **portfolio showcase**. This project demonstrates enterprise software engineering principles using **ASP.NET Core 10**, **Clean Architecture**, **CQRS + MediatR**, **React 19**, **PostgreSQL**, **Adminer**, and **ML.NET SSA time series forecasting**.
+A supply chain management system engineered as an **enterprise architecture case study**. This project demonstrates production-level software engineering patterns using **ASP.NET Core 10**, **Clean Architecture**, **CQRS + MediatR**, **React 19**, **PostgreSQL**, **Adminer**, and **ML.NET SSA time series forecasting**.
 
 *Note: This is an engineering case study and portfolio piece, not a commercial SaaS product.*
 
@@ -73,7 +73,8 @@ MySupplyChain/
 ├── MySupplyChain.Infrastructure  # EF Core, ML.NET, JWT auth (implements Application interfaces)
 ├── MySupplyChain.API             # Controllers, middleware, Swagger (composition root)
 ├── MySupplyChain.ModelTrainer    # Offline SSA model training console app
-├── MySupplyChain.Tests           # Unit + integration tests (Passing suite)
+├── MySupplyChain.Tests           # 27 unit + integration tests (xUnit, FluentAssertions)
+├── MySupplyChain.Benchmarks     # BenchmarkDotNet performance suite (SSA, CQRS, CSV parsing)
 └── graphify-out/                 # Standard AST knowledge graph metadata and visualization
 ```
 
@@ -89,9 +90,9 @@ MySupplyChain/
 | **JWT Auth** | Production-grade JWT + ASP.NET Identity with strict password policies and secure data isolation |
 | **PostgreSQL Database** | Modern, open-source performance with native JSON support and UTC-strict timestamp enforcement |
 
-## 🚀 Recent Production Updates
+## Recent Engineering Updates
 
-The system has been hardened with enterprise-grade features focusing on data integrity and security:
+The system has been hardened with features focusing on data integrity and security:
 
 *   **High-Fidelity Ingestion Engine:** Developed a robust CSV parser with advanced field mapping (Product details, Customer entities, Order grouping). Implemented automated data cleaning and feature engineering to handle skewed production data.
 *   **Security Hardening:** Enforced strong ASP.NET Identity password policies and implemented secure data management workflows, including multi-step word confirmation gates for irreversible data purges.
@@ -147,7 +148,8 @@ The stack automatically boots:
 | Auth | JWT Bearer + ASP.NET Core Identity |
 | ML | ML.NET 5.0 (SSA Time Series) |
 | CQRS | MediatR 14 |
-| Testing | xUnit + FluentAssertions + WebApplicationFactory |
+| Testing | xUnit + FluentAssertions + WebApplicationFactory (27 tests) |
+| Benchmarks | BenchmarkDotNet (SSA forecasting, CQRS handlers, CSV parsing) |
 | Containerization | Docker + Docker Compose |
 
 ## License

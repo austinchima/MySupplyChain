@@ -152,3 +152,5 @@ graphify-out/
 .vscode/
 
 node_modules/
+
+RESUME_BULLETS.md
